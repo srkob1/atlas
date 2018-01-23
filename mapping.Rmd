@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = FALSE,
 library(fiftystater)
 library(tidyverse)
 
-incd <- read_csv("~/atlas/data/incd.csv",
+incd <- read_csv("../atlas/data/incd.csv",
     skip = 9, n_max = 53, col_names = c(
       "State",
     "FIPS",
@@ -59,7 +59,6 @@ ggplot(incd, aes(map_id = tolower(State))) +
 
 
 ```{r}
-
 ggplot(incd, aes(map_id = tolower(State))) + 
   # map points to the fifty_states shape data
   geom_map(aes(fill = IRLower95), map = fifty_states) + 
@@ -76,7 +75,6 @@ ggplot(incd, aes(map_id = tolower(State))) +
 
 
 ```{r}
-
 ggplot(incd, aes(map_id = tolower(State))) + 
   # map points to the fifty_states shape data
   geom_map(aes(fill = IRUpper95), map = fifty_states) + 
@@ -91,16 +89,8 @@ ggplot(incd, aes(map_id = tolower(State))) +
 ```
 
 
-###Cartogram
-
-```{r}
-
-```
-
-
-
 ### Dot plot
-```{r, fig.height=4.5}
+```{r, fig.height=7.5}
 incd %>% select("State", "IRLower95","IRUpper95") %>% gather(key = "Conf", value = "Value", IRLower95, IRUpper95) -> ConfInts
   
 ggplot(incd) + 
@@ -110,6 +100,45 @@ ggplot(incd) +
 ```
 
 
+### Hex Map
 
+```{r}
+library(rgdal)
+library(rgeos)
+library(ggplot2)
+ 
+us <- readOGR("us_states_hexgrid.geojson", "OGRGeoJSON")
+
+
+centers <- cbind.data.frame(data.frame(gCentroid(us, byid=TRUE), id=us@data$iso3166_2))
+ 
+us_map <- fortify(us, region="iso3166_2")
+
+incd50 %>% mutate(google_name = paste0(State, " (United States)")) %>% select(google_name, IRAgeAdjusted) %>% full_join(., us@data) -> hexdata
+
+
+
+gg <- ggplot()+ geom_map(data=us_map, map=us_map,
+                    aes(x=long, y=lat, map_id=id),
+                    color="white", size=0.5)
+
+gg <- gg + geom_map(data=hexdata, map=us_map,
+                    aes(fill=IRAgeAdjusted, map_id=iso3166_2))
+gg <- gg + geom_map(data=us@data, map=us_map,
+                    aes(map_id=iso3166_2),
+                    fill="#ffffff", alpha=0, color="white",
+                    show_guide=FALSE)
+
+gg <- gg + geom_text(data=centers, aes(label=id, x=x, y=y), color="white", size=4)
+gg <- gg + coord_map()
+gg <- gg + labs(x=NULL, y=NULL)
+gg <- gg + theme_bw()
+gg <- gg + theme(panel.border=element_blank())
+gg <- gg + theme(panel.grid=element_blank())
+gg <- gg + theme(axis.ticks=element_blank())
+gg <- gg + theme(axis.text=element_blank())
+gg
+
+```
 
 
