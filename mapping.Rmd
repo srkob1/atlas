@@ -130,6 +130,7 @@ gg <- gg + geom_map(data=us@data, map=us_map,
                     show_guide=FALSE)
 
 gg <- gg + geom_text(data=centers, aes(label=id, x=x, y=y), color="white", size=4)
+gg <- gg + scale_fill_distiller(palette="RdPu", na.value="#7f7f7f")
 gg <- gg + coord_map()
 gg <- gg + labs(x=NULL, y=NULL)
 gg <- gg + theme_bw()
