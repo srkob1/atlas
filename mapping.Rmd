@@ -1,0 +1,115 @@
+---
+title: "Atlas Beginnings"
+author: "Stephanie"
+date: "22 January 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      warning = FALSE,
+                      message = FALSE)
+```
+
+```{r}
+library(fiftystater)
+library(tidyverse)
+
+incd <- read_csv("~/atlas/data/incd.csv",
+    skip = 9, n_max = 53, col_names = c(
+      "State",
+    "FIPS",
+    "Objective",
+    "IRAgeAdjusted",
+    "IRLower95",
+    "IRUpper95",
+    "AvgAnnualCount",
+    "RecentTrend", 
+    "RecentTrend5yr", 
+    "TrendLower95",
+    "TrendUpper95"), na="NA")
+
+incd <- incd %>% mutate(State=gsub("\\s*\\([^\\)]+\\)", "", State)) %>%
+     mutate_if(is.double,as.numeric)
+
+# for only 50 states of US
+incd %>% filter(tolower(State) %in% fifty_states$id) -> incd50
+
+
+```
+
+
+
+###Choropleth Maps
+
+Choropleth maps of Incidence Rate, Lower 95% Confidence Interval, Upper 95% Confidence Interval.
+
+```{r}
+ggplot(incd, aes(map_id = tolower(State))) + 
+  # map points to the fifty_states shape data
+  geom_map(aes(fill = IRAgeAdjusted), map = fifty_states) + 
+  expand_limits(x = fifty_states$long, y = fifty_states$lat) +
+  coord_map() +
+  scale_x_continuous(breaks = NULL) + 
+  scale_y_continuous(breaks = NULL) +
+  labs(x = "", y = "") +
+  theme(legend.position = "bottom", 
+        panel.background = element_blank())
+```
+
+
+```{r}
+
+ggplot(incd, aes(map_id = tolower(State))) + 
+  # map points to the fifty_states shape data
+  geom_map(aes(fill = IRLower95), map = fifty_states) + 
+  expand_limits(x = fifty_states$long, y = fifty_states$lat) +
+  coord_map() +
+  scale_x_continuous(breaks = NULL) + 
+  scale_y_continuous(breaks = NULL) +
+  labs(x = "", y = "") +
+  theme(legend.position = "bottom", 
+        panel.background = element_blank())
+```
+
+
+
+
+```{r}
+
+ggplot(incd, aes(map_id = tolower(State))) + 
+  # map points to the fifty_states shape data
+  geom_map(aes(fill = IRUpper95), map = fifty_states) + 
+  expand_limits(x = fifty_states$long, y = fifty_states$lat) +
+  coord_map() +
+  scale_x_continuous(breaks = NULL) + 
+  scale_y_continuous(breaks = NULL) +
+  labs(x = "", y = "") +
+  theme(legend.position = "bottom", 
+        panel.background = element_blank())
+
+```
+
+
+###Cartogram
+
+```{r}
+
+```
+
+
+
+### Dot plot
+```{r, fig.height=4.5}
+incd %>% select("State", "IRLower95","IRUpper95") %>% gather(key = "Conf", value = "Value", IRLower95, IRUpper95) -> ConfInts
+  
+ggplot(incd) + 
+  geom_point(aes(y=reorder(State, IRAgeAdjusted), x=IRAgeAdjusted)) + 
+  geom_path(data= ConfInts, aes(y=State, group=State, x=Value), col="blue")
+  
+```
+
+
+
+
+
