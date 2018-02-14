@@ -245,13 +245,52 @@ ggplot(ap_inmelb_df) +
 Compare new centroid distance from original lat and long
 
 ```{r}
-library(geosphere)
-Ballarat4017 <- read_csv("data/4017/Ballarat4017.csv")
+# library(geosphere)
+# Ballarat4017 <- read_csv("data/4017/Ballarat4017.csv")
+# 
+# Ballarat4017 %>% distinct(id, .keep_all = TRUE) %>% arrange(id) -> Ballarat4017areas
+# 
+# distance <-c()
+# 
+# for (i in 1:17) {
+#     distVincentyEllipsoid(c(Ballarat4017areas$CENTROIX[i], Ballarat4017areas$CENTROIY[i]),c(Ballarat4017areas$V1[i],Ballarat4017areas$V2[i]),
+#                           a=6378249.145, b=6356514.86955, f=1/293.465) -> distance[i]
+# }
+# 
+# Ballarat4017 <- full_join(Ballarat4017, data.frame(id = 1:17,distance))
+# 
+# Ballarat4017 %>% distinct(id, .keep_all = TRUE) %>% select(id, SA2_NAME16, distance) %>% arrange(distance)-> dists
 
-Ballarat4017 %>% distinct(id, .keep_all = TRUE) -> Ballarat4017areas
 
-Ballarat4017areas 
+Melbourne_Inner4017 <- read_csv("data/4017/Melbourne - Inner4017.csv")
+Melbourne_Inner4017 %>% distinct(id, .keep_all = TRUE) %>% arrange(id) -> Melbourne_Inner4017areas
 
+distance <-c()
+
+for (i in 1:nrow(Melbourne_Inner4017areas)) {
+    distVincentyEllipsoid(c(Melbourne_Inner4017areas$CENTROIX[i], Melbourne_Inner4017areas$CENTROIY[i]),c(Melbourne_Inner4017areas$V1[i],Melbourne_Inner4017areas$V2[i]),
+                          a=6378249.145, b=6356514.86955, f=1/293.465) -> distance[i]
+}
+
+Melbourne_Inner4017 <- full_join(Melbourne_Inner4017, data.frame(id = 1:nrow(Melbourne_Inner4017areas),distance))
+
+Melbourne_Inner4017 %>% distinct(id, .keep_all = TRUE) %>% select(id, SA2_NAME16, distance) %>% arrange(distance)-> dists
+
+
+
+
+ggplot(Melbourne_Inner4017) +
+  geom_polygon(aes(x = long, y = lat, group = group, fill=distance)) +
+  geom_text(aes(V1, V2, label = substr(SA2_NAME16, 1, 4)), size = 2, color = "black") +
+  #scale_fill_viridis(alpha=0.4, discrete=TRUE) +
+  coord_equal() +
+  theme_void()  +
+    theme(
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent",colour = NA)
+        )
 ```
 
 
