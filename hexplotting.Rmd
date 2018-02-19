@@ -48,7 +48,7 @@ clean <- function(shape, simplify=TRUE) {
 
 SAtwo_df <- clean(SAtwo)
 
-polys <- as(SAtwos, "SpatialPolygons")
+polys <- as(SAtwo, "SpatialPolygons")
 
 centroid <- function(i, polys) {
   ctr <- Polygon(polys[i])@labpt
@@ -194,6 +194,8 @@ ap_warr.points = fortify(ap_warr, region="id")
 ap_warr.df = merge(ap_warr.points, ap_warr@data, by="id")
 
 name<-as.character(Y[i,1] %>% pull())
+
+## distance column
 write_csv(ap_warr.df, paste(name, "4017.csv", sep=""))
 
 plot <- ggplot(ap_warr.df) +
@@ -242,10 +244,14 @@ ggplot(ap_inmelb_df) +
         )
 ```
 
+
 Compare new centroid distance from original lat and long
 
 ```{r}
-# library(geosphere)
+
+vicSPDF <- subset(SAtwo, STE_NAME16=="Victoria")
+
+library(geosphere)
 # Ballarat4017 <- read_csv("data/4017/Ballarat4017.csv")
 # 
 # Ballarat4017 %>% distinct(id, .keep_all = TRUE) %>% arrange(id) -> Ballarat4017areas
@@ -260,6 +266,62 @@ Compare new centroid distance from original lat and long
 # Ballarat4017 <- full_join(Ballarat4017, data.frame(id = 1:17,distance))
 # 
 # Ballarat4017 %>% distinct(id, .keep_all = TRUE) %>% select(id, SA2_NAME16, distance) %>% arrange(distance)-> dists
+
+
+Y <- vicSPDF %>% split(.@data$SA4_NAME16) %>%
+  map_df(., nrow) %>%
+  gather(., key = "number", value = "val") %>%
+  filter(val>0) %>% select(number)
+
+#100 simulations of locations
+for (j in 1:100) {
+  for (i in 1:17) {
+  #locate a region
+  vicSPDF %>% subset(.@data$SA4_NAME16 == Y[i, 1] %>% pull()) -> area
+  #vicSPDF %>% subset(.@data$GCC_CODE16 == "2GMEL") -> area
+  #assign polygons to hexagons
+  
+  seedj <- (4018 + j)
+  ap_area <-
+  assign_polygons(
+  area,
+  calculate_grid(
+  shape = area,
+  learning_rate = 0.01,
+  grid_type = "hexagonal",
+  seed = seedj))
+  # make dataframe
+  ap_area@data$id = rownames(ap_area@data)
+  ap_area.points = fortify(ap_area, region = "id")
+  ap_area.df = merge(ap_area.points, ap_area@data, by = "id")
+  
+  name <- as.character(Y[i, 1] %>% pull())
+  
+  ## distance column
+  satwos <-
+  ap_area.df %>% distinct(id, .keep_all = TRUE) %>% arrange(id)
+  
+  distance <- c()
+  
+  for (i in 1:nrow(satwos)) {
+  distVincentyEllipsoid(
+  c(satwos$CENTROIX[i], satwos$CENTROIY[i]),
+  c(satwos$V1[i], satwos$V2[i]),
+  a = 6378249.145,
+  b = 6356514.86955,
+  f = 1 / 293.465
+  ) -> distance[i]
+  }
+  
+  ap_area.df <-
+  full_join(ap_area.df, data.frame(id = as.character(1:nrow(
+  satwos
+  )), distance), by = "id")
+  
+  write_csv(ap_area.df, paste(name, 4018 + j, ".csv", sep = ""))
+  }
+}
+
 
 
 Melbourne_Inner4017 <- read_csv("data/4017/Melbourne - Inner4017.csv")
