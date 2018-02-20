@@ -1,7 +1,20 @@
 library(plyr)
+library(tidyverse)
+library(readr)
 
-filenames <- list.files(pattern="*.csv", full.names=TRUE)
+library(sf)
+library(rgdal)
+library(rmapshaper)
+library(tidyverse)
+library(ggplot2)
+library(ggthemes)
+library(ggrepel)
+#library(hexmapr)
+library(geogrid)
 
+filenames <- list.files(path = "data/simulations",pattern="*.csv", full.names=TRUE)
+
+# list of areas
 Y<-list("Ballarat",
         "Bendigo",
         "Geelong",
@@ -20,14 +33,62 @@ Y<-list("Ballarat",
         "Shepparton",
         "Warrnambool and South West")
 
+# function to find the sum of the distance between the original centroids and the hex centroids allocated
+resSum <- function(dat){
+  sum<-NA
+  if("distance" %in% colnames(dat)){
+    dat %>% distinct(.$SA2_NAME16, .keep_all = T) %>% select(distance) %>% sum -> sum
+  }
+  return(sum)
+}
+
+
+dfs <- list()
+plots <- list()
+res <- list()
+
 for (i in seq(Y)){
   
 sub <- subset(filenames, grepl(Y[[i]], filenames))
-ldf <- llply(filenames, read.csv)
-#collect distance column
-#calculate residuals
-#res <- lapply(ldf, summary)
-names(res) <- filenames
+dfs[[i]] <- dfsi <- llply(sub, read_csv)
+print(paste(i, Y[[i]]))
+
+# collect distance column
+# calculate residuals
+res[[i]] <- lapply(dfsi, resSum)
+# maxs <- lapply(ldf, maxDist)
+
+# the sum of the residual distances for melbourne inner
+#res <- lapply(dfs[[i]], resSum)
+
+# the simulation with the smallest sum of the residual distances for melbourne inner
+mymin <- res[[i]] %>% unlist() %>% which.min()
+
+# data frame of simulation that had the minimum sum of the residual distances
+dst_min_df <- dfs[[i]][[mymin]]
+#ggplot(dst_min_df%>% distinct(SA2_NAME16, .keep_all = T), aes(x=distance)) + geom_histogram()
+
+# hex map of simulation that had the minimum sum of the residual distances
+plots[[i]] <- ggplot(dst_min_df) +
+  geom_polygon(aes(x = long, y = lat, group = group, fill=distance)) +
+  geom_text(aes(V1, V2, label = substr(SA2_NAME16, 1, 4)), size = 2, color = "black") +
+  #scale_fill_viridis(alpha=0.4, discrete=TRUE) +
+  coord_equal() +
+  theme_void()  +
+  theme(
+    panel.grid.major = element_blank(), 
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "transparent",colour = NA),
+    plot.background = element_rect(fill = "transparent",colour = NA)
+  )
+
+names(plots)[[i]] <- paste0(Y[[i]], mymin)
+names(dfs)[[i]] <- Y[[i]]
 }
 
-#find simulation with minimum error
+
+
+#export plots
+for (i in 1:17) {
+ggsave(paste0(names(plots)[i], ".png"), plots[i][[1]], bg = "transparent")
+}
