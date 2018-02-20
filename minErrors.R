@@ -12,11 +12,14 @@ library(ggrepel)
 #library(hexmapr)
 library(geogrid)
 
-filenames <- list.files(path = "data/simulations",pattern="*.csv", full.names=TRUE)
+#path = "data/simulations/qld",
+
+filenames <- list.files(path = "data/simulations/qld", pattern="*.csv", full.names=TRUE)
 
 # list of areas
-Y <- list("Ballarat","Bendigo","Geelong","Hume","Latrobe","Melbourne - Inner East","Melbourne - Inner South","Melbourne - Inner","Melbourne - North East","Melbourne - North West","Melbourne - Outer East","Melbourne - South East","Melbourne - West","Mornington Peninsula","North West","Shepparton","Warrnambool and South West")
-
+#Y <- list("Ballarat","Bendigo","Geelong","Hume","Latrobe","Melbourne - Inner East","Melbourne - Inner South","Melbourne - Inner","Melbourne - North East","Melbourne - North West","Melbourne - Outer East","Melbourne - South East","Melbourne - West","Mornington Peninsula","North West","Shepparton","Warrnambool and South West")
+ Y <- list("Brisbane - East", "Brisbane - North", "Brisbane - South", "Brisbane - West", "Brisbane Inner City", "Cairns", "Central Queensland", "Darling Downs - Maranoa", "Gold Coast", "Ipswich", "Logan - Beaudesert", "Mackay - Isaac - Whitsunday", "Moreton Bay - North", "Moreton Bay - South", "Queensland - Outback", "Sunshine Coast", "Toowoomba")
+   
 # function to find the sum of the distance between the original centroids and the hex centroids allocated
 resSum <- function(dat){
   sum<-NA
