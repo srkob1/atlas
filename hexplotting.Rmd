@@ -249,7 +249,7 @@ Compare new centroid distance from original lat and long
 
 ```{r}
 
-vicSPDF <- subset(SAtwo, STE_NAME16=="Victoria")
+SPDF <- subset(SAtwo, STE_NAME16=="Victoria")
 
 library(geosphere)
 # Ballarat4017 <- read_csv("data/4017/Ballarat4017.csv")
@@ -274,7 +274,7 @@ Y <- vicSPDF %>% split(.@data$SA4_NAME16) %>%
   filter(val>0) %>% select(number)
 
 #100 simulations of locations
-for (j in 1:100) {
+for (j in 49:100) {
   for (i in 1:17) {
   #locate a region
   vicSPDF %>% subset(.@data$SA4_NAME16 == Y[i, 1] %>% pull()) -> area
@@ -354,6 +354,82 @@ ggplot(Melbourne_Inner4017) +
         plot.background = element_rect(fill = "transparent",colour = NA)
         )
 ```
+
+
+
+
+Compare new centroid distance from original lat and long Brisbane
+
+```{r}
+
+qldSPDF <- subset(SAtwo, STE_NAME16=="Queensland")
+
+library(geosphere)
+
+Y <- qldSPDF %>% split(.@data$SA4_NAME16) %>%
+  map_df(., nrow) %>%
+  gather(., key = "number", value = "val") %>%
+  filter(val>0) %>% select(number)
+
+#100 simulations of locations
+for (j in 1:100) {
+  for (i in 1:17) {
+  #locate a region
+  qldSPDF %>% subset(.@data$SA4_NAME16 == Y[i, 1] %>% pull()) -> area
+  
+  #assign polygons to hexagons
+  
+  seedj <- (4018 + j)
+  ap_area <-
+  assign_polygons(
+  area,
+  calculate_grid(
+  shape = area,
+  learning_rate = 0.01,
+  grid_type = "hexagonal",
+  seed = seedj))
+  # make dataframe
+  ap_area@data$id = rownames(ap_area@data)
+  ap_area.points = fortify(ap_area, region = "id")
+  ap_area.df = merge(ap_area.points, ap_area@data, by = "id")
+  
+  name <- as.character(Y[i, 1] %>% pull())
+  
+  ## distance column
+  satwos <-
+  ap_area.df %>% distinct(id, .keep_all = TRUE) %>% arrange(id)
+  
+  distance <- c()
+  
+  for (i in 1:nrow(satwos)) {
+  distVincentyEllipsoid(
+  c(satwos$CENTROIX[i], satwos$CENTROIY[i]),
+  c(satwos$V1[i], satwos$V2[i]),
+  a = 6378249.145,
+  b = 6356514.86955,
+  f = 1 / 293.465
+  ) -> distance[i]
+  }
+  
+  ap_area.df <-
+  full_join(ap_area.df, data.frame(id = as.character(1:nrow(
+  satwos
+  )), distance), by = "id")
+  
+  write_csv(ap_area.df, paste(name, 4018 + j, ".csv", sep = ""))
+  }
+}
+
+
+
+
+
+
+
+
+```
+
+
 
 
 

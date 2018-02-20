@@ -15,23 +15,7 @@ library(geogrid)
 filenames <- list.files(path = "data/simulations",pattern="*.csv", full.names=TRUE)
 
 # list of areas
-Y<-list("Ballarat",
-        "Bendigo",
-        "Geelong",
-        "Hume",
-        "Latrobe",
-        "Melbourne - Inner East",
-        "Melbourne - Inner South",
-        "Melbourne - Inner",
-        "Melbourne - North East",
-        "Melbourne - North West",
-        "Melbourne - Outer East",
-        "Melbourne - South East",
-        "Melbourne - West",
-        "Mornington Peninsula",
-        "North West",
-        "Shepparton",
-        "Warrnambool and South West")
+Y <- list("Ballarat","Bendigo","Geelong","Hume","Latrobe","Melbourne - Inner East","Melbourne - Inner South","Melbourne - Inner","Melbourne - North East","Melbourne - North West","Melbourne - Outer East","Melbourne - South East","Melbourne - West","Mornington Peninsula","North West","Shepparton","Warrnambool and South West")
 
 # function to find the sum of the distance between the original centroids and the hex centroids allocated
 resSum <- function(dat){
@@ -69,10 +53,13 @@ dst_min_df <- dfs[[i]][[mymin]]
 #ggplot(dst_min_df%>% distinct(SA2_NAME16, .keep_all = T), aes(x=distance)) + geom_histogram()
 
 # hex map of simulation that had the minimum sum of the residual distances
-plots[[i]] <- ggplot(dst_min_df) +
+dst_min_df <- dst_min_df %>% mutate(label = paste(gsub("-", "- \n", SA2_NAME16)))
+
+plots[[i]] <- 
+  ggplot(dst_min_df) +
   geom_polygon(aes(x = long, y = lat, group = group, fill=distance)) +
-  geom_text(aes(V1, V2, label = substr(SA2_NAME16, 1, 4)), size = 2, color = "black") +
-  #scale_fill_viridis(alpha=0.4, discrete=TRUE) +
+  geom_text(aes(V1, V2, label = label), size = 4, color = "black") +
+  scale_fill_distiller() +
   coord_equal() +
   theme_void()  +
   theme(
@@ -89,6 +76,7 @@ names(dfs)[[i]] <- Y[[i]]
 
 
 #export plots
-for (i in 1:17) {
+for (i in seq(plots)) {
 ggsave(paste0(names(plots)[i], ".png"), plots[i][[1]], bg = "transparent")
 }
+
