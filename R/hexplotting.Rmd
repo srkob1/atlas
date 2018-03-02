@@ -34,7 +34,7 @@ Data, download link
 
 # http://www.ausstats.abs.gov.au/ausstats/subscriber.nsf/0/A09309ACB3FA50B8CA257FED0013D420/$File/1270055001_sa2_2016_aust_shape.zip
 
-SAtwo = readOGR(dsn="./data/SA2_2016_AUST.shp", layer="SA2_2016_AUST")
+#SAtwo = readOGR(dsn="data/SA2_2016_AUST", layer="SA2_2016_AUST")
 #dropping null geometries, areas with no residents?
 
 clean <- function(shape, simplify=TRUE) {
@@ -46,21 +46,24 @@ clean <- function(shape, simplify=TRUE) {
   shape.df = merge(shape.points, shape@data, by="id")
 }
 
-SAtwo_df <- clean(SAtwo)
+SAtwo_df <- clean(SAtwo, simplify = F)
 
 polys <- as(SAtwo, "SpatialPolygons")
 
 centroid <- function(i, polys) {
-  ctr <- Polygon(polys[i])@labpt
-  id <- SAtwo$id[i]
-  data.frame(long_c=ctr[1], lat_c=ctr[2], id = id)
+    ctr <- sp::Polygon(polys[i])@labpt
+    id <- i
+    data.frame(long_c=ctr[1], lat_c=ctr[2], id = as.numeric(i))
 }
 
-centroids <- seq_along(polys) %>% purrr::map_df(centroid, polys=polys)
+centroids <-  purrr::map_df(seq_along(polys), centroid, polys=polys)
+
+
+centroids <- seq_along(polys) %>% purrr::map_df(centroid, polys=polys) %>% as.tibble()
 
 #join the centroids to full data set
 
-SAtwos.df <- full_join(SAtwos.df, centroids)
+SAtwos.df <- full_join(SAtwo_df %>% as.tibble(), centroids)
 ```
 
 Greater Melbourne Area
@@ -171,14 +174,14 @@ Plot Victorian SA4's separately
 
 ```{r dependson=data, eval = FALSE}
 #Vic only
-vicSPDF <- subset(SAtwos, STE_NAME16=="Victoria")
+vicSPDF <- subset(SAtwo, STE_NAME16=="Victoria")
 
 
 #Vic area names
 Y <- vicSPDF %>% split(.@data$SA4_NAME16) %>%
   map_df(., nrow) %>%
   gather(., key = "number", value = "val") %>%
-  filter(val>0) %>% select(number)
+  filter(val>0) %>% select(number) %>% as.vector()
 
 #Y[17,1]
 #individual plot for each
