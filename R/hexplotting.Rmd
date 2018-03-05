@@ -46,30 +46,32 @@ clean <- function(shape, simplify=TRUE) {
   shape.df = merge(shape.points, shape@data, by="id")
 }
 
-SAtwo_df <- clean(SAtwo, simplify = F)
+SAtwo_df <- clean(sa2Small, simplify = F)
 
 polys <- as(SAtwo, "SpatialPolygons")
 
-centroid <- function(i, polys) {
-    ctr <- sp::Polygon(polys[i])@labpt
-    id <- i
-    data.frame(long_c=ctr[1], lat_c=ctr[2], id = as.numeric(i))
+centroid <- function(i, SAtwo) {
+    ctr <- SAtwo@polygons[[i]]@labpt
+    id <- SAtwo@data$SA2_5DIG16[i]
+    cat(i, id, "\n")
+    name <- as.character(SAtwo@data$SA2_NAME16[i])
+    sa4 <- as.character(SAtwo@data$SA4_NAME16[i])
+    ste <- as.character(SAtwo@data$STE_NAME16[i])
+    gcc <- as.character(SAtwo@data$GCC_NAME16[i])
+    data.frame(i, long_c=ctr[1], lat_c=ctr[2], id = id, name, sa4 , ste , gcc)
 }
 
-centroids <-  purrr::map_df(seq_along(polys), centroid, polys=polys)
-
-
-centroids <- seq_along(polys) %>% purrr::map_df(centroid, polys=polys) %>% as.tibble()
+centroids <-  purrr::map_df(seq_along(1:2292), centroid, SAtwo=SAtwo)
 
 #join the centroids to full data set
 
-SAtwos.df <- full_join(SAtwo_df %>% as.tibble(), centroids)
+sa2_data <- full_join(SAtwo_df %>% as.tibble(), centroid, by = ("SA2_NAME16"= "name"))
 ```
 
 Greater Melbourne Area
 
 ```{r}
-melb <- SAtwos.df %>% mutate(code = substr(SA2_NAME16, 1, 4)) %>%
+melb <- sa2_data %>% mutate(code = substr(SA2_NAME16, 1, 4)) %>%
   filter(GCC_CODE16=="2GMEL")
 
 ggplot(data=melb) +
@@ -157,7 +159,7 @@ hexmelb.points = fortify(hexmelb, region="id")
 hexmelb.df = merge(hexmelb.points, hexmelb@data, by="id")
 
 #SAtwos.points = fortify(SAtwos, region="id")
-#SAtwos.df = full_join(SAtwos.points, SAtwos@data, by="id")
+#sa2_data = full_join(SAtwos.points, SAtwos@data, by="id")
 
 ggplot(hexmelb.df) +
   geom_polygon(aes(x = long, y = lat, group = group, fill=factor(SA4_NAME16))) +
@@ -223,7 +225,7 @@ ggsave(paste0(Y[i,1] %>% pull(), "4017.png"), plot, bg = "transparent")
 
 
 ```{r}
-#nm <- as.vector(SAtwos.df$SA4_NAME16) %>% unique()
+#nm <- as.vector(sa2_data$SA4_NAME16) %>% unique()
 #melblist <- grep('Melbourne', nm, value=TRUE)
 
 inmelbSPDF <- subset(SAtwo, SA4_NAME16 %in% melblist)
