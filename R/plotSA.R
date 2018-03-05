@@ -49,7 +49,7 @@ for (i in seq(50)){
   ap_saSPDF.df = merge(ap_saSPDF.points, ap_saSPDF@data, by = "id")
   
   
-  ap_saSPDF.df <- ap_saSPDF.df %>% mutate(label = paste(gsub(" ", "\n", SA2_NAME16)))
+  ap_saSPDF.df <- ap_saSPDF.df %>% mutate(label = paste(gsub(" ", "\n", gsub(" - ", "", SA2_NAME16))))
   
   
   ap_saSPDF.df <- ap_saSPDF.df %>% rowwise %>% 
