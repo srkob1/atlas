@@ -9,7 +9,7 @@ library(ggthemes)
 library(ggrepel)
 library(geogrid)
 library(RColorBrewer)
-
+library(geosphere)
 
 load("~/atlas/data/sa2_data.Rda")
 load("~/atlas/data/sa2_map.Rda")
@@ -28,8 +28,9 @@ Y <- saSPDF %>% split(.@data$SA4_NAME16) %>%
 myPalette <- colorRampPalette(rev(brewer.pal(11, "Greens")))
 sc <- scale_fill_gradientn(colours = myPalette(100), limits=c(1, 1700000))
 
+distanceList <- list()
 # geogrid hex map simulations
-for (i in seq(50)){
+for (i in seq(50:150)){
   
   seed <- (4018 + i)
   
@@ -49,7 +50,7 @@ for (i in seq(50)){
   ap_saSPDF.df = merge(ap_saSPDF.points, ap_saSPDF@data, by = "id")
   
   
-  ap_saSPDF.df <- ap_saSPDF.df %>% mutate(label = paste(gsub(" ", "\n", gsub(" - ", "", SA2_NAME16))))
+  ap_saSPDF.df <- ap_saSPDF.df %>% mutate(label = paste(gsub(" ", "\n", gsub(" - ", " ", SA2_NAME16))))
   
   
   ap_saSPDF.df <- ap_saSPDF.df %>% rowwise %>% 
@@ -58,6 +59,9 @@ for (i in seq(50)){
                                             c(V1,V2),
                                             a=6378249.145, b=6356514.86955, f=1/293.465))
   
+  distanceList[[i]] <- ap_saSPDF.df %>% select(id, SA2_NAME16,
+                                          CENTROIX,
+                                          CENTROIY, V1,V2, distance)
   
   plot <- ggplot(ap_saSPDF.df) +
     geom_polygon(aes(
