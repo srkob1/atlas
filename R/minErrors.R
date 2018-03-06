@@ -23,7 +23,7 @@ Y <- list("Ballarat","Bendigo","Geelong","Hume","Latrobe","Melbourne - Inner Eas
 resSum <- function(dat){
   sum<-NA
   if("distance" %in% colnames(dat)){
-    dat %>% distinct(.$SA2_NAME16, .keep_all = T) %>% select(distance) %>% sum -> sum
+    dat %>% distinct(.keep_all = T) %>% select(distance) %>% sum -> sum
   }
   return(sum)
 }
@@ -49,7 +49,7 @@ res[[i]] <- lapply(dfsi, resSum)
 
 # the simulation with the smallest sum of the residual distances for melbourne inner
 # mymin <- res[[i]] %>% unlist() %>% which.min()
-min15 <- res[[i]] %>% unlist %>% data.frame(sim = as.vector(1:length(.)),dist = . ) %>% 
+min15 <- res[[i]] %>% unlist %>% data.frame(sim = as.vector((4019:(length(.)+4018))),dist = . ) %>% 
   arrange(dist)
 min <- min15$sim[1:15]
   a<-1
