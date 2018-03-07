@@ -11,16 +11,15 @@ library(geogrid)
 library(RColorBrewer)
 library(geosphere)
 
-
 load("~/atlas/data/sa2_data.Rda")
 load("~/atlas/data/sa2_map.Rda")
 load("~/atlas/data/sa2Small.Rda")
 
-ntSPDF <- subset(sa2Small, STE_NAME16=="Northern Territory")
+saSPDF <- subset(sa2Small, STE_NAME16=="South Australia")
 
 
 #sa area names
-Y <- ntSPDF %>% split(.@data$SA4_NAME16) %>%
+Y <- saSPDF %>% split(.@data$SA4_NAME16) %>%
   map_df(., nrow) %>%
   gather(., key = "number", value = "val") %>%
   filter(val>0) %>% select(number) %>% as.vector()
@@ -31,42 +30,44 @@ sc <- scale_fill_gradientn(colours = myPalette(100), limits=c(1, 2000000))
 
 distanceList<-list()
 
+distanceList <- list()
 # geogrid hex map simulations
-for (i in seq(51:150)){
+
+for (i in seq(50:150)){
   
   seed <- (4018 + i)
   
-  ap_ntSPDF <-
+  ap_saSPDF <-
     assign_polygons(
-      ntSPDF,
+      saSPDF,
       calculate_grid(
-        shape = ntSPDF,
+        shape = saSPDF,
         learning_rate = 0.01,
         grid_type = "hexagonal",
         seed = seed
       )
     )
   # make dataframe
-  ap_ntSPDF@data$id = rownames(ap_ntSPDF@data)
-  ap_ntSPDF.points = fortify(ap_ntSPDF, region = "id")
-  ap_ntSPDF.df = merge(ap_ntSPDF.points, ap_ntSPDF@data, by = "id")
+  ap_saSPDF@data$id = rownames(ap_saSPDF@data)
+  ap_saSPDF.points = fortify(ap_saSPDF, region = "id")
+  ap_saSPDF.df = merge(ap_saSPDF.points, ap_saSPDF@data, by = "id")
   
   
-  ap_ntSPDF.df <- ap_ntSPDF.df %>% mutate(label = paste(gsub(" ", "\n", gsub(" - ", " ", SA2_NAME16))))
+  ap_saSPDF.df <- ap_saSPDF.df %>% mutate(label = paste(gsub(" ", "\n", gsub(" - ", " ", SA2_NAME16))))
   
   
-  ap_ntSPDF.df <- ap_ntSPDF.df %>% rowwise %>% 
+  ap_saSPDF.df <- ap_saSPDF.df %>% rowwise %>% 
     mutate(distance = distVincentyEllipsoid(c(CENTROIX,
                                               CENTROIY),
                                             c(V1,V2),
                                             a=6378249.145, b=6356514.86955, f=1/293.465))
   
-  distanceList[[i]] <- ap_ntSPDF.df %>% select(id, SA2_NAME16,
-                                               CENTROIX,
-                                               CENTROIY,
-                                               V1, V2, distance)
+  distanceList[[i]] <- ap_saSPDF.df %>% select(id, SA2_NAME16,
+                                          CENTROIX,
+                                          CENTROIY, V1,V2, distance)
   
-  plot <- ggplot(ap_ntSPDF.df) +
+  
+  plot <- ggplot(ap_saSPDF.df) +
     geom_polygon(aes(
       x = long,
       y = lat,
@@ -92,6 +93,6 @@ for (i in seq(51:150)){
       plot.background = element_rect(fill = "transparent", colour = NA)
     )
   plot
-  ggsave(paste0("Northern Territory", seed, ".png", sep=""), plot, bg = "transparent")
+  ggsave(paste0("South Australia", seed, ".png", sep=""), plot, bg = "transparent")
   
 }
