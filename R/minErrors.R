@@ -23,7 +23,7 @@ Y <- list("Ballarat","Bendigo","Geelong","Hume","Latrobe","Melbourne - Inner Eas
 resSum <- function(dat){
   sum<-NA
   if("distance" %in% colnames(dat)){
-    dat %>% distinct(.$SA2_NAME16, .keep_all = T) %>% select(distance) %>% sum -> sum
+    dat %>% distinct(.keep_all = T) %>% select(distance) %>% sum -> sum
   }
   return(sum)
 }

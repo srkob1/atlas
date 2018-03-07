@@ -1,4 +1,4 @@
-# plot subset
+# plot subset - Northern Territory
 
 library(sf)
 library(rgdal)
@@ -10,7 +10,6 @@ library(ggrepel)
 library(geogrid)
 library(RColorBrewer)
 library(geosphere)
-
 
 load("~/atlas/data/sa2_data.Rda")
 load("~/atlas/data/sa2_map.Rda")
@@ -26,13 +25,13 @@ Y <- ntSPDF %>% split(.@data$SA4_NAME16) %>%
   filter(val>0) %>% select(number) %>% as.vector()
 
 
-myPalette <- colorRampPalette(rev(brewer.pal(9, "Greens")))
+myPalette <- colorRampPalette(rev(brewer.pal(11, "Greens")))
 sc <- scale_fill_gradientn(colours = myPalette(100), limits=c(1, 2000000))
 
-distanceList<-list()
 
+distanceList <- list()
 # geogrid hex map simulations
-for (i in seq(51:150)){
+for (i in seq(7:150)){
   
   seed <- (4018 + i)
   
@@ -41,7 +40,7 @@ for (i in seq(51:150)){
       ntSPDF,
       calculate_grid(
         shape = ntSPDF,
-        learning_rate = 0.01,
+        learning_rate = 0.001,
         grid_type = "hexagonal",
         seed = seed
       )
@@ -56,15 +55,13 @@ for (i in seq(51:150)){
   
   
   ap_ntSPDF.df <- ap_ntSPDF.df %>% rowwise %>% 
-    mutate(distance = distVincentyEllipsoid(c(CENTROIX,
-                                              CENTROIY),
-                                            c(V1,V2),
+    mutate(distance = distVincentyEllipsoid(c(V1,V2),c(CENTROIX,
+                                                       CENTROIY),
                                             a=6378249.145, b=6356514.86955, f=1/293.465))
   
   distanceList[[i]] <- ap_ntSPDF.df %>% select(id, SA2_NAME16,
-                                               CENTROIX,
-                                               CENTROIY,
-                                               V1, V2, distance)
+                                               CENTROIX, CENTROIY,
+                                               V1,V2, distance)
   
   plot <- ggplot(ap_ntSPDF.df) +
     geom_polygon(aes(
@@ -95,3 +92,4 @@ for (i in seq(51:150)){
   ggsave(paste0("Northern Territory", seed, ".png", sep=""), plot, bg = "transparent")
   
 }
+ 

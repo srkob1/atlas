@@ -10,9 +10,11 @@ library(ggrepel)
 library(geogrid)
 
 
-load("~/atlas/data/sa2_data.Rda")
-load("~/atlas/data/sa2_map.Rda")
-load("~/atlas/data/sa2Small.Rda")
+load("data/sa2_data.Rda")
+load("data/sa2_map.Rda")
+load("data/sa2Small.Rda")
+
+
 
 tasSPDF <- subset(sa2Small, STE_NAME16=="Tasmania")
 
