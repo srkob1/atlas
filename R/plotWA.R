@@ -26,12 +26,12 @@ Y <- waSPDF %>% split(.@data$SA4_NAME16) %>%
 
 
 myPalette <- colorRampPalette(rev(brewer.pal(9, "Greens")))
-sc <- scale_fill_gradientn(colours = myPalette(100), limits=c(1, 200000))
+sc <- scale_fill_gradientn(colours = myPalette(100), limits=c(1, 2000000))
 
 # geogrid hex map simulations
 for (i in seq(50)){
   
-  seed <- (4081 + i)
+  seed <- (4018 + i)
   
   ap_waSPDF <-
     assign_polygons(
@@ -49,7 +49,7 @@ for (i in seq(50)){
   ap_waSPDF.df = merge(ap_waSPDF.points, ap_waSPDF@data, by = "id")
   
   
-  ap_waSPDF.df <- ap_waSPDF.df %>% mutate(label = paste(gsub(" ", "\n", SA2_NAME16)))
+  ap_waSPDF.df <- ap_waSPDF.df %>% mutate(label = paste(gsub(" ", "\n", gsub(" - ", " ", SA2_NAME16))))
   
   
   ap_waSPDF.df <- ap_waSPDF.df %>% rowwise %>% 
