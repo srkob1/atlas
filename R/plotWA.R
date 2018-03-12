@@ -9,7 +9,7 @@ library(ggthemes)
 library(ggrepel)
 library(geogrid)
 library(RColorBrewer)
-
+library(geosphere)
 
 load("~/atlas/data/sa2_data.Rda")
 load("~/atlas/data/sa2_map.Rda")
@@ -18,7 +18,7 @@ load("~/atlas/data/sa2Small.Rda")
 waSPDF <- subset(sa2Small, STE_NAME16=="Western Australia")
 
 
-#tas area names
+#sa area names
 Y <- waSPDF %>% split(.@data$SA4_NAME16) %>%
   map_df(., nrow) %>%
   gather(., key = "number", value = "val") %>%
@@ -26,12 +26,14 @@ Y <- waSPDF %>% split(.@data$SA4_NAME16) %>%
 
 
 myPalette <- colorRampPalette(rev(brewer.pal(9, "Greens")))
-sc <- scale_fill_gradientn(colours = myPalette(100), limits=c(1, 2000000))
+sc <- scale_fill_gradientn(colours = myPalette(100), limits=c(1,
+                                                              2500000))
 
+myDistanceList <- list()
 # geogrid hex map simulations
-for (i in seq(50)){
+for (i in seq(3)){
   
-  seed <- (4018 + i)
+  seed <- (3018 + i)
   
   ap_waSPDF <-
     assign_polygons(
@@ -52,12 +54,14 @@ for (i in seq(50)){
   ap_waSPDF.df <- ap_waSPDF.df %>% mutate(label = paste(gsub(" ", "\n", gsub(" - ", " ", SA2_NAME16))))
   
   
-  ap_waSPDF.df <- ap_waSPDF.df %>% rowwise %>% 
-    mutate(distance = distVincentyEllipsoid(c(CENTROIX,
-                                              CENTROIY),
-                                            c(V1,V2),
+  ap_waSPDF.df <- ap_waSPDF.df %>% rowwise %>%
+    mutate(distance = distVincentyEllipsoid(c(V1,V2),c(CENTROIX,
+                                                       CENTROIY),
                                             a=6378249.145, b=6356514.86955, f=1/293.465))
   
+  myDistanceList[[i]] <- ap_waSPDF.df %>% select(id, SA2_NAME16,
+                                               CENTROIX,
+                                               CENTROIY, V1,V2, distance)
   
   plot <- ggplot(ap_waSPDF.df) +
     geom_polygon(aes(
@@ -88,4 +92,5 @@ for (i in seq(50)){
   ggsave(paste0("Western Australia", seed, ".png", sep=""), plot, bg = "transparent")
   
 }
- 
+
+save(waDistanceList, file = "waDistanceList")
