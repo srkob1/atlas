@@ -15,55 +15,55 @@ load("~/atlas/data/sa2_data.Rda")
 load("~/atlas/data/sa2_map.Rda")
 load("~/atlas/data/sa2Small.Rda")
 
-waSPDF <- subset(sa2Small, STE_NAME16=="Western Australia")
+nswSPDF <- subset(sa2Small, STE_NAME16=="New South Wales")
 
 
 #sa area names
-Y <- waSPDF %>% split(.@data$SA4_NAME16) %>%
+Y <- nswSPDF %>% split(.@data$SA4_NAME16) %>%
   map_df(., nrow) %>%
   gather(., key = "number", value = "val") %>%
   filter(val>0) %>% select(number) %>% as.vector()
 
 
-myPalette <- colorRampPalette(rev(brewer.pal(9, "Greens")))
-sc <- scale_fill_gradientn(colours = myPalette(100), limits=c(1,
-                                                              2500000))
+myPalette <- colorRampPalette(rev(brewer.pal(11, "Greens")))
+sc <- scale_fill_gradientn(colours = myPalette(100), limits=c(1, 1700000))
 
-myDistanceList <- list()
+distanceList <- list()
 # geogrid hex map simulations
-for (i in seq(3)){
+for (i in seq(50:150)){
   
-  seed <- (3018 + i)
+  seed <- (4018 + i)
   
-  ap_waSPDF <-
+  ap_nswSPDF <-
     assign_polygons(
-      waSPDF,
+      nswSPDF,
       calculate_grid(
-        shape = waSPDF,
+        shape = nswSPDF,
         learning_rate = 0.01,
         grid_type = "hexagonal",
         seed = seed
       )
     )
   # make dataframe
-  ap_waSPDF@data$id = rownames(ap_waSPDF@data)
-  ap_waSPDF.points = fortify(ap_waSPDF, region = "id")
-  ap_waSPDF.df = merge(ap_waSPDF.points, ap_waSPDF@data, by = "id")
+  ap_nswSPDF@data$id = rownames(ap_nswSPDF@data)
+  ap_nswSPDF.points = fortify(ap_nswSPDF, region = "id")
+  ap_nswSPDF.df = merge(ap_nswSPDF.points, ap_nswSPDF@data, by = "id")
   
   
-  ap_waSPDF.df <- ap_waSPDF.df %>% mutate(label = paste(gsub(" ", "\n", gsub(" - ", " ", SA2_NAME16))))
+  ap_nswSPDF.df <- ap_nswSPDF.df %>% mutate(label = paste(gsub(" ", "\n", gsub(" - ", " ", SA2_NAME16))))
   
   
-  ap_waSPDF.df <- ap_waSPDF.df %>% rowwise %>%
-    mutate(distance = distVincentyEllipsoid(c(V1,V2),c(CENTROIX,
-                                                       CENTROIY),
+  ap_nswSPDF.df <- ap_nswSPDF.df %>% rowwise %>% 
+    mutate(distance = distVincentyEllipsoid(c(CENTROIX,
+                                              CENTROIY),
+                                            c(V1,V2),
                                             a=6378249.145, b=6356514.86955, f=1/293.465))
   
-  myDistanceList[[i]] <- ap_waSPDF.df %>% select(id, SA2_NAME16,
+  distanceList[[i]] <- ap_nswSPDF.df %>% select(id, SA2_NAME16,
                                                CENTROIX,
                                                CENTROIY, V1,V2, distance)
   
-  plot <- ggplot(ap_waSPDF.df) +
+  plot <- ggplot(ap_nswSPDF.df) +
     geom_polygon(aes(
       x = long,
       y = lat,
@@ -89,8 +89,6 @@ for (i in seq(3)){
       plot.background = element_rect(fill = "transparent", colour = NA)
     )
   plot
-  ggsave(paste0("Western Australia", seed, ".png", sep=""), plot, bg = "transparent")
+  ggsave(paste0("New South Wales", seed, ".png", sep=""), plot, bg = "transparent")
   
 }
-
-save(waDistanceList, file = "waDistanceList")
