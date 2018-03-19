@@ -25,18 +25,25 @@ sydSPDF <- subset(sa2Small, GCC_NAME16=="Greater Sydney")
 
 
 #sa area names
-Y <- sydSPDF %>% split(.@data$SA4_NAME16) %>%
+
+#nswSPDF <- subset(sa2Small, STE_NAME16=="New South Wales")
+
+newSPDF <- subset(sa2Small, SA4_NAME16=="Newcastle and Lake Macquarie")
+
+
+#sa area names
+Y <- newSPDF %>% split(.@data$SA4_NAME16) %>%
   map_df(., nrow) %>%
   gather(., key = "number", value = "val") %>%
   filter(val>0) %>% select(number) %>% as.vector()
 
 
 myPalette <- colorRampPalette(rev(brewer.pal(9, "Greens")))
-sc <- scale_fill_gradientn(colours = myPalette(100), limits=c(1, 170000))
+sc <- scale_fill_gradientn(colours = myPalette(100), limits=c(1, 35000))
 
 distanceList <- list()
 # geogrid hex map simulations
-for (i in 1:60){
+for (i in 1:150){
   
   seed <- (4040 + i)
   
@@ -51,6 +58,7 @@ for (i in 1:60){
       )
     )
   # make dataframe
+  
   ap_sydSPDF@data$id = rownames(ap_sydSPDF@data)
   ap_sydSPDF.points = fortify(ap_sydSPDF, region = "id")
   ap_sydSPDF.df = merge(ap_sydSPDF.points, ap_sydSPDF@data, by = "id")
@@ -63,18 +71,21 @@ for (i in 1:60){
     mutate(distance = distVincentyEllipsoid(c(CENTROIX,
                                               CENTROIY),
                                             c(V1,V2),
-                                            a=6378249.145, b=6356514.86955, f=1/293.465))
+                                            a=6378249.145, b=6356514.86955, f=1/293.465),
+           wDist = distance*(population/max(population)))
+  
   
   distanceList[[i]] <- ap_sydSPDF.df %>% select(id, SA2_NAME16,
                                                CENTROIX,
                                                CENTROIY, V1,V2, distance) %>% distinct(.keep_all = T)
   
+
   plot <- ggplot(ap_sydSPDF.df) +
     geom_polygon(aes(
       x = long,
       y = lat,
       group = group,
-      fill = distance
+      fill = wDist
     )) +
     geom_text(
       aes(
@@ -187,3 +198,37 @@ for (j in seq(25)){
 }
 
 
+ ## plot Newcastle
+
+
+
+#Weighted populations
+newcDisList <- map(distanceList, right_join, sa2_data %>% 
+                     filter(SA4_NAME16=="Newcastle and Lake Macquarie"))
+#Weighted populations
+for (i in 1:length(newcDisList)) {
+  newcDisList[[i]] <- newcDisList[[i]] %>% 
+    mutate(wDist = distance*(population/max(population))) %>% 
+    arrange(desc(population))
+}
+
+
+
+
+
+
+# function to find the sum of the distance between the original centroids and the hex centroids allocated
+wSum <- function(dat){
+  sum<-NA
+  if("wDist" %in% colnames(dat)){
+    dat %>% distinct(.keep_all = T) %>% select(wDist) %>% sum -> sum
+  }
+  return(sum)
+}
+
+
+
+wSumList <- lapply(newcDisList, wSum)
+
+minwDist <- wSumList %>% unlist %>% data.frame(sim = as.vector((4019:(length(.)+4018))),wDist = . ) %>% 
+  arrange(wDist)
