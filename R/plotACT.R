@@ -1,4 +1,4 @@
-# plot subset
+# plot subset - Australian Capital Territory
 
 library(sf)
 library(rgdal)
@@ -15,58 +15,57 @@ load("~/atlas/data/sa2_data.Rda")
 load("~/atlas/data/sa2_map.Rda")
 load("~/atlas/data/sa2Small.Rda")
 
-#nswSPDF <- subset(sa2Small, STE_NAME16=="New South Wales")
-
-newSPDF <- subset(sa2Small, SA4_NAME16=="Newcastle and Lake Macquarie")
+actSPDF <- subset(sa2Small, STE_NAME16=="Australian Capital Territory")
 
 
 #sa area names
-Y <- newSPDF %>% split(.@data$SA4_NAME16) %>%
+Y <- actSPDF %>% split(.@data$SA4_NAME16) %>%
   map_df(., nrow) %>%
   gather(., key = "number", value = "val") %>%
   filter(val>0) %>% select(number) %>% as.vector()
 
 
 myPalette <- colorRampPalette(rev(brewer.pal(9, "Greens")))
-sc <- scale_fill_gradientn(colours = myPalette(100), limits=c(1, 35000))
+sc <- scale_fill_gradientn(colours = myPalette(100), limits=c(1, 70000))
+
 
 distanceList <- list()
 # geogrid hex map simulations
-for (i in 1:150){
+for (i in seq(7:150)){
   
   seed <- (4018 + i)
   
-  ap_newSPDF <-
+  ap_actSPDF <-
     assign_polygons(
-      newSPDF,
+      actSPDF,
       calculate_grid(
-        shape = newSPDF,
-        learning_rate = 0.01,
+        shape = actSPDF,
+        learning_rate = 0.001,
         grid_type = "hexagonal",
         seed = seed
       )
     )
   # make dataframe
-  ap_newSPDF@data$id = rownames(ap_newSPDF@data)
-  ap_newSPDF.points = fortify(ap_newSPDF, region = "id")
-  ap_newSPDF.df = merge(ap_newSPDF.points, ap_newSPDF@data, by = "id")
+  ap_actSPDF@data$id = rownames(ap_actSPDF@data)
+  ap_actSPDF.points = fortify(ap_actSPDF, region = "id")
+  ap_actSPDF.df = merge(ap_actSPDF.points, ap_actSPDF@data, by = "id")
   
   
-  ap_newSPDF.df <- ap_newSPDF.df %>% mutate(label = paste(gsub(" ", "\n", gsub(" - ", " ", SA2_NAME16))))
+  ap_actSPDF.df <- ap_actSPDF.df %>% mutate(label = paste(gsub(" ", "\n", gsub(" - ", " ", SA2_NAME16))))
   
   
-  ap_newSPDF.df <- ap_newSPDF.df %>% rowwise %>% 
-    mutate(distance = distVincentyEllipsoid(c(CENTROIX,
+  ap_actSPDF.df <- ap_actSPDF.df %>% dplyr::rowwise() %>% 
+    mutate(distance = distVincentyEllipsoid(c(V1,
+                                              V2), 
+                                            c(CENTROIX,
                                               CENTROIY),
-                                            c(V1,V2),
-                                            a=6378249.145, b=6356514.86955, f=1/293.465),
-           wDist = distance*(population/max(population)))
+                                            a=6378249.145, b=6356514.86955, f=1/293.465))
   
-  distanceList[[i]] <- ap_newSPDF.df %>% select(id, SA2_NAME16,
-                                               CENTROIX,
-                                               CENTROIY, V1,V2, distance)
+  distanceList[[i]] <- ap_actSPDF.df %>% select(id, SA2_NAME16,
+                                               CENTROIX, CENTROIY,
+                                               V1,V2, distance)
   
-  plot <- ggplot(ap_newSPDF.df) +
+  plot <- ggplot(ap_actSPDF.df) +
     geom_polygon(aes(
       x = long,
       y = lat,
@@ -78,7 +77,7 @@ for (i in 1:150){
         V1,
         V2,
         label = label),
-      size = 3,
+      size = 2.5,
       color = "black"
     ) +
     sc +
@@ -92,23 +91,20 @@ for (i in 1:150){
       plot.background = element_rect(fill = "transparent", colour = NA)
     )
   plot
-  ggsave(paste0("New South Wales", seed, ".png", sep=""), plot, bg = "transparent")
+  ggsave(paste0("Australian Capital Territory", seed, ".png", sep=""), plot, bg = "transparent")
   
 }
 
- 
- ## plot Newcastle
 
 
 
 #Weighted populations
-newcDisList <- map(distanceList, right_join, sa2_data %>% 
-                     filter(SA4_NAME16=="Newcastle and Lake Macquarie"))
+actDisList <- map(actDistanceList, left_join, SA2population)
 #Weighted populations
-for (i in 1:length(newcDisList)) {
-  newcDisList[[i]] <- newcDisList[[i]] %>% 
-    mutate(wDist = distance*(population/max(population))) %>% 
-    arrange(desc(population))
+for (i in 1:length(actDisList)) {
+  actDisList[[i]] <- actDisList[[i]] %>% 
+  mutate(wDist = distance*(population/max(population))) %>% 
+  arrange(desc(population))
 }
 
 
@@ -127,7 +123,7 @@ wSum <- function(dat){
 
 
 
-wSumList <- lapply(newcDisList, wSum)
+wSumList <- lapply(actDisList, wSum)
 
 minwDist <- wSumList %>% unlist %>% data.frame(sim = as.vector((4019:(length(.)+4018))),wDist = . ) %>% 
   arrange(wDist)
