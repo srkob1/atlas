@@ -17,6 +17,7 @@ load("~/atlas/data/sa2Small.Rda")
 
 waSPDF <- subset(sa2Small, STE_NAME16=="Western Australia")
 
+# minSeed <-4059
 
 #sa area names
 Y <- waSPDF %>% split(.@data$SA4_NAME16) %>%

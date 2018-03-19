@@ -14,7 +14,7 @@ load("data/sa2_data.Rda")
 load("data/sa2_map.Rda")
 load("data/sa2Small.Rda")
 
-
+# minSeed <- 4032
 
 tasSPDF <- subset(sa2Small, STE_NAME16=="Tasmania")
 
