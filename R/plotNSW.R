@@ -203,11 +203,12 @@ for (j in seq(25)){
 
 
 #Weighted populations
-newcDisList <- map(distanceList, right_join, sa2_data %>% 
-                     filter(SA4_NAME16=="Newcastle and Lake Macquarie"))
+gsydDisList <- map(distanceList, left_join, sa2_data %>% 
+                     filter(GCC_NAME16=="Greater Sydney"), by = c("SA2_NAME16"))
+
 #Weighted populations
-for (i in 1:length(newcDisList)) {
-  newcDisList[[i]] <- newcDisList[[i]] %>% 
+for (i in 1:length(gsydDisList)) {
+  gsydDisList[[i]] <- gsydDisList[[i]] %>% 
     mutate(wDist = distance*(population/max(population))) %>% 
     arrange(desc(population))
 }
@@ -228,7 +229,10 @@ wSum <- function(dat){
 
 
 
-wSumList <- lapply(newcDisList, wSum)
+wSumList <- lapply(gsydDisList, wSum)
 
 minwDist <- wSumList %>% unlist %>% data.frame(sim = as.vector((4019:(length(.)+4018))),wDist = . ) %>% 
   arrange(wDist)
+
+
+intersect(min15 %>% top_n(15) %>% select(sim), minwDist %>% top_n(15) %>% select(sim))
