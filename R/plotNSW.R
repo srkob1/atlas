@@ -253,6 +253,3 @@ west <- c("Central West", "Far West and Orana")
 north <- c("New England and North West", "Hunter Valley exc Newcastle")
 northeast <- c("Richmond - Tweed", "Mid North Coast", "Coffs Harbour - Grafton")
 
-
-
-
