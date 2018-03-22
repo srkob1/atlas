@@ -37,6 +37,11 @@ myPalette <- colorRampPalette(rev(brewer.pal(9, "Greens")))
 sc <- scale_fill_gradientn(colours = myPalette(100), limits=c(1, 35000))
 
 distanceList <- list()
+
+
+sydSPDF <- subset(sa2Small, SA4_NAME16 %in% southeast)
+
+
 # geogrid hex map simulations
 for (i in 1:150){
   
@@ -116,15 +121,14 @@ nonsSPDF$SA4_NAME16 %>%
 nonsTable$. %>% as.vector() ->Y
 
 
-distanceList <- list()
+swdistanceList <- list()
 
 
-for (i in 6:13){
-  
-
-for (j in seq(100)){
+for (j in 1:25){
   
   seed <- (4018 + j)
+  
+  #nonsSPDF %>% subset(nonsSPDF@data$SA4_NAME16 == Y[i]) -> ySPDF
   
   ap_ySPDF <-
     assign_polygons(
@@ -151,7 +155,7 @@ for (j in seq(100)){
                                             c(V1,V2),
                                             a=6378249.145, b=6356514.86955, f=1/293.465))
 
-  distanceList[[1]] <- ap_ySPDF.df %>% select(id, SA2_NAME16,
+  swdistanceList[[1]] <- ap_ySPDF.df %>% select(id, SA2_NAME16,
                                              CENTROIX,
                                              CENTROIY, V1,V2, distance)
   
@@ -184,8 +188,8 @@ for (j in seq(100)){
   # ggsave(paste0(Y[i], seed, ".png", sep=""), plot, bg = "transparent")
   
   cat(paste0(Y[i], seed, ".png", "\n", sep=""))
-}
-  nswDistanceList[[i]] <- distanceList
+#}
+  #nswDistanceList[[i]] <- distanceList
 }
 
 
@@ -212,12 +216,16 @@ minDist <- res %>% unlist %>% data.frame(sim = as.vector((4019:(length(.)+4018))
 #                    by = c("SA2_NAME16"))
 
 #Weighted populations
+
 newList<-list()
 for (i in 1:length(distanceList)) {
   distanceList[[i]] <- distanceList[[i]] %>%rowwise %>%
-    mutate(wDist = (population/maxPopulation)) %>% 
-    arrange(desc(population))
-}
+    mutate(wDist = (population/maxPopulation)) 
+  }
+
+gsydDisList <- map(distanceList, left_join, sa2_data %>% 
+                     filter(GCC_NAME16=="Greater Sydney"), by = c("SA2_NAME16"))
+
 
 addWdist <- function(dat){
   maxPopulation <- dat %>% select(population) %>% max()
@@ -238,10 +246,26 @@ wSum <- function(dat){
   return(sum)
 }
 
+wSumList <- lapply(gsydDisList, wSum)
 
-wSumList <- lapply(DisList, wSum)
 
 minwDist <- wSumList %>% unlist %>% data.frame(sim = as.vector((4019:(length(.)+4018))),wDist = . ) %>% 
   arrange(wDist)
 
 left_join(minwDist, minDist)
+
+
+intersect(min15 %>% top_n(15) %>% select(sim), minwDist %>% top_n(15) %>% select(sim))
+
+
+
+
+# areas to hex map
+sa2_data %>% filter(GCC_NAME16=="Rest of NSW" & !(SA4_NAME16=="Newcastle and Lake Macquarie")) %>% group_by(SA4_NAME16) %>% summarise(count=plyr::count(SA4_NAME16))
+
+# group areas
+southeast <- c("Capital Region", "Illawarra", "Southern Highlands and Shoalhaven")
+southwest <- c("Riverina", "Murray")
+west <- c("Central West", "Far West and Orana")
+north <- c("New England and North West", "Hunter Valley exc Newcastle")
+northeast <- c("Richmond - Tweed", "Mid North Coast", "Coffs Harbour - Grafton")
