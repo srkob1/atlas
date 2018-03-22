@@ -15,24 +15,19 @@ load("~/atlas/data/sa2_data.Rda")
 load("~/atlas/data/sa2_map.Rda")
 load("~/atlas/data/sa2Small.Rda")
 
-#sydSPDF <- subset(sa2Small, STE_NAME16=="New South Wales")
-
-#nonsSPDF <- subset(sa2Small, STE_NAME16=="New South Wales" &!(GCC_NAME16=="Greater Sydney"))
-
+#newcSPDF <- subset(sa2Small, STE_NAME16=="New South Wales")
 # Break NSW into multiple Cartograms - Sydney, ACT,
-
-sydSPDF <- subset(sa2Small, GCC_NAME16=="Greater Sydney")
 
 
 #sa area names
 
 #nswSPDF <- subset(sa2Small, STE_NAME16=="New South Wales")
 
-newSPDF <- subset(sa2Small, SA4_NAME16=="Newcastle and Lake Macquarie")
+newcSPDF <- subset(sa2Small, SA4_NAME16=="Newcastle and Lake Macquarie")
 
 
 #sa area names
-Y <- newSPDF %>% split(.@data$SA4_NAME16) %>%
+Y <- newcSPDF %>% split(.@data$SA4_NAME16) %>%
   map_df(., nrow) %>%
   gather(., key = "number", value = "val") %>%
   filter(val>0) %>% select(number) %>% as.vector()
@@ -45,13 +40,13 @@ distanceList <- list()
 # geogrid hex map simulations
 for (i in 1:150){
   
-  seed <- (4040 + i)
+  seed <- (4018 + i)
   
-  ap_sydSPDF <-
+  ap_newcSPDF <-
     assign_polygons(
-      sydSPDF,
+      newcSPDF,
       calculate_grid(
-        shape = sydSPDF,
+        shape = newcSPDF,
         learning_rate = 0.01,
         grid_type = "hexagonal",
         seed = seed
@@ -59,28 +54,25 @@ for (i in 1:150){
     )
   # make dataframe
   
-  ap_sydSPDF@data$id = rownames(ap_sydSPDF@data)
-  ap_sydSPDF.points = fortify(ap_sydSPDF, region = "id")
-  ap_sydSPDF.df = merge(ap_sydSPDF.points, ap_sydSPDF@data, by = "id")
+  ap_newcSPDF@data$id = rownames(ap_newcSPDF@data)
+  ap_newcSPDF.points = fortify(ap_newcSPDF, region = "id")
+  ap_newcSPDF.df = merge(ap_newcSPDF.points, ap_newcSPDF@data, by = "id")
   
   
-  ap_sydSPDF.df <- ap_sydSPDF.df %>% mutate(label = paste(gsub(" ", "\n", gsub(" - ", " ", SA2_NAME16))))
+  ap_newcSPDF.df <- ap_newcSPDF.df %>% mutate(label = paste(gsub(" ", "\n", gsub(" - ", " ", SA2_NAME16))))
   
   
-  ap_sydSPDF.df <- ap_sydSPDF.df %>% rowwise %>% 
+  ap_newcSPDF.df <- ap_newcSPDF.df %>% rowwise %>% 
     mutate(distance = distVincentyEllipsoid(c(CENTROIX,
                                               CENTROIY),
                                             c(V1,V2),
-                                            a=6378249.145, b=6356514.86955, f=1/293.465),
-           wDist = distance*(population/max(population)))
+                                            a=6378249.145, b=6356514.86955, f=1/293.465))
+  maxPopulation <- max(ap_newcSPDF.df$population)
   
-  
-  distanceList[[i]] <- ap_sydSPDF.df %>% select(id, SA2_NAME16,
-                                               CENTROIX,
-                                               CENTROIY, V1,V2, distance) %>% distinct(.keep_all = T)
-  
-
-  plot <- ggplot(ap_sydSPDF.df) +
+  distanceList[[i]] <- ap_newcSPDF.df %>% rowwise %>% 
+    mutate(wDist = distance*(population/maxPopulation))
+             
+  plot <- ggplot(ap_newcSPDF.df) +
     geom_polygon(aes(
       x = long,
       y = lat,
@@ -105,16 +97,16 @@ for (i in 1:150){
       panel.background = element_rect(fill = "transparent", colour = NA),
       plot.background = element_rect(fill = "transparent", colour = NA)
     )
-  plot
-  ggsave(paste0("GSydney", seed, ".png", sep=""), plot, bg = "transparent")
+  #plot
+  #ggsave(paste0("GSydney", seed, ".png", sep=""), plot, bg = "transparent")
   
-  save(distanceList, file = "gsydDistanceList.Rda")
+  # save(distanceList, file = "gsydDistanceList.Rda")
 }
 
 
 
 
-#Not in sydney
+ #Not in sydney
 nonsSPDF$SA4_NAME16 %>% 
   table %>% 
   as.data.frame() %>% 
@@ -128,12 +120,11 @@ distanceList <- list()
 
 
 for (i in 6:13){
+  
 
-for (j in seq(25)){
+for (j in seq(100)){
   
   seed <- (4018 + j)
-  
-  nonsSPDF %>% subset(nonsSPDF@data$SA4_NAME16 == Y[i]) -> ySPDF
   
   ap_ySPDF <-
     assign_polygons(
@@ -200,21 +191,42 @@ for (j in seq(25)){
 
  ## plot Newcastle
 
-
-
-#Weighted populations
-newcDisList <- map(distanceList, right_join, sa2_data %>% 
-                     filter(SA4_NAME16=="Newcastle and Lake Macquarie"))
-#Weighted populations
-for (i in 1:length(newcDisList)) {
-  newcDisList[[i]] <- newcDisList[[i]] %>% 
-    mutate(wDist = distance*(population/max(population))) %>% 
-    arrange(desc(population))
+resSum <- function(dat){
+  sum<-NA
+  if("distance" %in% colnames(dat)){
+    dat %>% distinct(.keep_all = T) %>% select(distance) %>% sum -> sum
+  }
+  return(sum)
 }
 
 
+res <- lapply(newcDisList, resSum)
+
+minDist <- res %>% unlist %>% data.frame(sim = as.vector((4019:(length(.)+4018))),dist = . ) %>% 
+  arrange(dist)
 
 
+# #Weighted populations
+# distanceList <- map(distanceList, right_join, sa2_data %>% 
+#                      filter(SA4_NAME16=="Newcastle and Lake Macquarie"),
+#                    by = c("SA2_NAME16"))
+
+#Weighted populations
+newList<-list()
+for (i in 1:length(distanceList)) {
+  distanceList[[i]] <- distanceList[[i]] %>%rowwise %>%
+    mutate(wDist = (population/maxPopulation)) %>% 
+    arrange(desc(population))
+}
+
+addWdist <- function(dat){
+  maxPopulation <- dat %>% select(population) %>% max()
+ dat %>% rowwise %>%
+    mutate(wDist = (population/maxPopulation)) %>% 
+    arrange(desc(population))
+} 
+
+  distanceList <- map(addWdist(.))
 
 
 # function to find the sum of the distance between the original centroids and the hex centroids allocated
@@ -227,8 +239,9 @@ wSum <- function(dat){
 }
 
 
-
-wSumList <- lapply(newcDisList, wSum)
+wSumList <- lapply(DisList, wSum)
 
 minwDist <- wSumList %>% unlist %>% data.frame(sim = as.vector((4019:(length(.)+4018))),wDist = . ) %>% 
   arrange(wDist)
+
+left_join(minwDist, minDist)
