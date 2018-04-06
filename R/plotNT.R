@@ -33,7 +33,7 @@ distanceList <- list()
 # geogrid hex map simulations
 for (i in seq(7:150)){
   
-  seed <- (4018 + i)
+  seed <- (4018 + 14)
   
   ap_ntSPDF <-
     assign_polygons(

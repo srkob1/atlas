@@ -45,6 +45,12 @@ Y <- tasSPDF %>% split(.@data$SA4_NAME16) %>%
   gather(., key = "number", value = "val") %>%
   filter(val>0) %>% select(number) %>% as.vector()
 
+
+
+myPalette <- colorRampPalette(rev(brewer.pal(9, "Greens")))
+sc <- scale_fill_gradientn(colours = myPalette(100), limits=c(1,
+                                                              250000))
+
 #hex map simulations
 for (i in seq(50)){
   
@@ -66,6 +72,11 @@ for (i in seq(50)){
   ap_tasSPDF.df = merge(ap_tasSPDF.points, ap_tasSPDF@data, by = "id")
   
   
+  ap_tasSPDF.df <- ap_tasSPDF.df %>% rowwise %>%
+    mutate(distance = distVincentyEllipsoid(c(V1,V2),c(CENTROIX,
+                                                       CENTROIY),
+                                            a=6378249.145, b=6356514.86955, f=1/293.465))
+  
   ap_tasSPDF.df <- ap_tasSPDF.df %>% mutate(label = paste(gsub(" ", "\n", SA2_NAME16)))
   
   plot <- ggplot(ap_tasSPDF.df) +
@@ -73,7 +84,7 @@ for (i in seq(50)){
       x = long,
       y = lat,
       group = group,
-      fill = SA4_NAME16
+      fill = distance
     )) +
     geom_text(
       aes(
@@ -83,9 +94,9 @@ for (i in seq(50)){
         size = 2,
         color = "black"
       ) +
+    sc +
         #scale_fill_brewer(alpha=0.4, discrete=TRUE) +
         coord_equal() +
-        guides(fill = FALSE) +
         theme_void()  +
         theme(
           panel.grid.major = element_blank(),
@@ -98,3 +109,19 @@ for (i in seq(50)){
       
 }
  
+
+
+# separate, can we add more points than spatial polygons so it allocates and leaves white space?
+# add coordinates as an s4 object
+calculate_grid(
+  shape = tasSPDF,
+  learning_rate = 0.01,
+  grid_type = "hexagonal",
+  seed = seed
+) -> tassieO
+
+SPDF <-
+  assign_polygons(
+    tasSPDF,tassieO
+    )
+# make 
