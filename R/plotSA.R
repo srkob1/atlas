@@ -29,7 +29,6 @@ Y <- saSPDF %>% split(.@data$SA4_NAME16) %>%
 myPalette <- colorRampPalette(rev(brewer.pal(9, "Greens")))
 sc <- scale_fill_gradientn(colours = myPalette(100), limits=c(1, 2000000))
 
-distanceList<-list()
 
 distanceList <- list()
 # geogrid hex map simulations

@@ -20,9 +20,9 @@ load("~/atlas/data/sa2Small.Rda")
 
 
 #sa area names
-
+# all NSW areas
 #nswSPDF <- subset(sa2Small, STE_NAME16=="New South Wales")
-
+# specific areas
 newcSPDF <- subset(sa2Small, SA4_NAME16=="Newcastle and Lake Macquarie")
 
 
@@ -189,15 +189,14 @@ minDist <- res %>% unlist %>% data.frame(sim = as.vector((4019:(length(.)+4018))
 
 #Weighted populations
 
-gsydDisList <- map(distanceList, left_join, sa2_data %>% 
-                     filter(GCC_NAME16=="Greater Sydney"), by = c("SA2_NAME16"))
-gsydDisList->distanceList
-
 newList<-list()
-for (i in 1:length(gsydDisList)) {
-  newList[[i]] <- gsydDisList[[i]] %>% rowwise %>%
+for (i in 1:length(distanceList)) {
+  distanceList[[i]] <- distanceList[[i]] %>%rowwise %>%
     mutate(wDist = (population/maxPopulation)) 
   }
+
+gsydDisList <- map(distanceList, left_join, sa2_data %>% 
+                     filter(GCC_NAME16=="Greater Sydney"), by = c("SA2_NAME16"))
 
 
 addWdist <- function(dat){
@@ -206,22 +205,20 @@ addWdist <- function(dat){
     mutate(wDist = (population/maxPopulation)) %>% 
     arrange(desc(population))
 } 
-# this doesn't work yet
-gsydList <- map(gsydDisList,addWdist(.))
+
+  distanceList <- map(addWdist(.))
 
 
 # function to find the sum of the distance between the original centroids and the hex centroids allocated
 wSum <- function(dat){
   sum<-NA
   if("wDist" %in% colnames(dat)){
-    dat %>% distinct(SA2_NAME16, .keep_all = T) %>% select(wDist) %>% sum -> sum
+    dat %>% distinct(.keep_all = T) %>% select(wDist) %>% sum -> sum
   }
   return(sum)
 }
 
-wSumList <- lapply(newList, wSum)
-
-nedistanceList <- lapply(nedistanceList, wSum)
+wSumList <- lapply(gsydDisList, wSum)
 
 
 minwDist <- wSumList %>% unlist %>% data.frame(sim = as.vector((4019:(length(.)+4018))),wDist = . ) %>% 

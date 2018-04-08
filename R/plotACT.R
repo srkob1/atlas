@@ -28,10 +28,11 @@ Y <- actSPDF %>% split(.@data$SA4_NAME16) %>%
 myPalette <- colorRampPalette(rev(brewer.pal(9, "Greens")))
 sc <- scale_fill_gradientn(colours = myPalette(100), limits=c(1, 70000))
 
+# minseed<- 4053
 
 distanceList <- list()
 # geogrid hex map simulations
-for (i in seq(7:150)){
+for (i in seq(69:100)){
   
   seed <- (4018 + i)
   
@@ -64,34 +65,7 @@ for (i in seq(7:150)){
   distanceList[[i]] <- ap_actSPDF.df %>% select(id, SA2_NAME16,
                                                CENTROIX, CENTROIY,
                                                V1,V2, distance)
-  
-  plot <- ggplot(ap_actSPDF.df) +
-    geom_polygon(aes(
-      x = long,
-      y = lat,
-      group = group,
-      fill = wDist
-    )) +
-    geom_text(
-      aes(
-        V1,
-        V2,
-        label = label),
-      size = 2.5,
-      color = "black"
-    ) +
-    sc +
-    coord_equal() +
-    #guides(fill = FALSE) +
-    theme_void()  +
-    theme(
-      panel.grid.major = element_blank(),
-      panel.grid.minor = element_blank(),
-      panel.background = element_rect(fill = "transparent", colour = NA),
-      plot.background = element_rect(fill = "transparent", colour = NA)
-    )
-  plot
-  ggsave(paste0("Australian Capital Territory", seed, ".png", sep=""), plot, bg = "transparent")
+  seed 
   
 }
 
