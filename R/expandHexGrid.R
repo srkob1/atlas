@@ -73,7 +73,23 @@ ggplot(data=sa2_map %>% filter(STE_NAME16=="Western Australia")) +
   )) +
   geom_point(data=waGrid, aes(x=long, y=lat))
 
+# TASMANIA
+# use long, lat, radius to create a grid
 
+tasSPDF <- subset(sa2Small, STE_NAME16=="Tasmania")
+
+bboxtas <- tasSPDF@bbox %>% as.data.frame()
+rownames(bboxtas) <- c("long", "lat")
+
+tasGrid <- expand.grid(long = seq(bboxtas[1,1], bboxtas[1,2], radius),
+                      lat = seq(bboxtas[2,1], bboxtas[2,2], radius))
+
+# move every second row right by 0.23/2
+waGrid <- waGrid %>% 
+  mutate(lat = ifelse(row_number() %% 2 == 1, lat, lat +(0.23/2)))
+
+
+# NORTHERN TERRITORY
 # use long, lat, radius to create a grid
 
 ntSPDF <- subset(sa2Small, STE_NAME16=="Northern Territory")
@@ -89,14 +105,76 @@ ntGrid <- expand.grid(long = seq(bboxnt[1,1], bboxnt[1,2], radius),
 ntGrid <- ntGrid %>% 
   mutate(lat = ifelse(row_number() %% 2 == 1, lat, lat +(0.23/2)))
 
-ggplot(data=sa2_map %>% filter(STE_NAME16=="Northern Territory")) +
-  geom_polygon(aes(
-    x = long,
-    y = lat,
-    group = group
-  )) +
-  geom_point(data=ntGrid, aes(x=long, y=lat))
 
+# SOUTH AUSTRALIA
+# use long, lat, radius to create a grid
+
+saSPDF <- subset(sa2Small, STE_NAME16=="SOUTH AUSTRALIA")
+
+bboxsa <- saSPDF@bbox %>% as.data.frame()
+rownames(bboxsa) <- c("long", "lat")
+
+# create grid that hexagons could be assigned to
+saGrid <- expand.grid(long = seq(bboxsa[1,1], bboxsa[1,2], radius),
+                      lat = seq(bboxsa[2,1], bboxsa[2,2], radius))
+
+# move every second row right by 0.23/2
+saGrid <- saGrid %>% 
+  mutate(lat = ifelse(row_number() %% 2 == 1, lat, lat +(0.23/2)))
+
+
+# QLD
+# use long, lat, radius to create a grid
+
+qldSPDF <- subset(sa2Small, STE_NAME16=="Queensland")
+
+bboxqld <- qldSPDF@bbox %>% as.data.frame()
+rownames(bboxqld) <- c("long", "lat")
+
+# create grid that hexagons could be assigned to
+qldGrid <- expand.grid(long = seq(bboxqld[1,1], bboxqld[1,2], radius),
+                      lat = seq(bboxqld[2,1], bboxqld[2,2], radius))
+
+# move every second row right by 0.23/2
+qldGrid <- qldGrid %>% 
+  mutate(lat = ifelse(row_number() %% 2 == 1, lat, lat +(0.23/2)))
+
+
+
+# New South Wales
+# use long, lat, radius to create a grid
+
+nswSPDF <- subset(sa2Small, STE_NAME16=="New South Wales")
+
+bboxnsw <- nswSPDF@bbox %>% as.data.frame()
+rownames(bboxnsw) <- c("long", "lat")
+
+# create grid that hexagons could be assigned to
+nswGrid <- expand.grid(long = seq(bboxnsw[1,1], bboxnsw[1,2], radius),
+                       lat = seq(bboxnsw[2,1], bboxnsw[2,2], radius))
+
+# move every second row right by 0.23/2
+nswGrid <- nswGrid %>% 
+  mutate(lat = ifelse(row_number() %% 2 == 1, lat, lat +(0.23/2)))
+
+
+
+
+# Australian Capital Territory
+# use long, lat, radius to create a grid
+
+actSPDF <- subset(sa2Small, STE_NAME16=="New South Wales")
+
+bboxact <- actSPDF@bbox %>% as.data.frame()
+rownames(bboxact) <- c("long", "lat")
+
+# create grid that hexagons could be assigned to
+actGrid <- expand.grid(long = seq(bboxact[1,1], bboxact[1,2], radius),
+                       lat = seq(bboxact[2,1], bboxact[2,2], radius))
+
+# move every second row right by 0.23/2
+actGrid <- actGrid %>% 
+  mutate(lat = ifelse(row_number() %% 2 == 1, lat, lat +(0.23/2)))
 
 
 # Assigning hexagons function
@@ -145,22 +223,70 @@ assign_hexagons <- function(long_c, lat_c, hex_long, hex_lat) {
 }
 
 
-#debug(assign_hexagons)
-
+#
 assign_hexagons(data$long, data$lat, waGrid$long, waGrid$lat) ->ah
 
+
+# APPLY ASSIGN POLYGONS TO REGIONS
 # create ordered list to allocate hexagons 
-sa2_map %>% filter(STE_NAME16=="Western Australia") %>%
+sa2_map %>% filter(STE_NAME16=="New South Wales") %>%
   arrange(desc(population)) %>%
   distinct(id, .keep_all = T) %>%
-  bind_cols(., assign_hexagons(.$long, .$lat, waGrid$long, waGrid$lat)) -> hexagons
+  bind_cols(., assign_hexagons(.$long, .$lat, nswGrid$long, nswGrid$lat)) -> nswGridAllocations
 
 
-ggplot(data=sa2_map %>% filter(STE_NAME16=="Western Australia")) +
-  geom_polygon(aes(
+#plot all Australia
+
+ggplot() +
+  geom_polygon(data=sa2_map %>% filter(STE_NAME16=="Victoria"),aes(
     x = long,
     y = lat,
     group = group), fill="white"
   ) +
-  geom_point(data=ah, aes(x=hex_long, y=hex_lat, colour=distance))
+  geom_point(data=hexagons, aes(x=hex_long, y=hex_lat, colour=distance)) +
+  geom_polygon(data=sa2_map %>% filter(STE_NAME16=="Tasmania"),aes(
+  x = long,
+  y = lat,
+  group = group), fill="white"
+) +
+  geom_point(data=tas, aes(x=hex_long, y=hex_lat, colour=distance))+
+  geom_polygon(data=sa2_map %>% filter(STE_NAME16=="Western Australia"),aes(
+    x = long,
+    y = lat,
+    group = group), fill="white"
+  ) +
+  geom_point(data=ah, aes(x=hex_long, y=hex_lat, colour=distance))+
+  geom_polygon(data=sa2_map %>% filter(STE_NAME16=="South Australia"),aes(
+    x = long,
+    y = lat,
+    group = group), fill="white"
+  ) +
+  geom_point(data=sa, aes(x=hex_long, y=hex_lat, colour=distance))+
+  geom_polygon(data=sa2_map %>% filter(STE_NAME16=="Northern Territory"),aes(
+    x = long,
+    y = lat,
+    group = group), fill="white"
+  ) +
+  geom_point(data=nt, aes(x=hex_long, y=hex_lat, colour=distance))+
+  geom_polygon(data=sa2_map %>% filter(STE_NAME16=="Queensland"),aes(
+    x = long,
+    y = lat,
+    group = group), fill="white"
+  ) +
+  geom_point(data=qld, aes(x=hex_long, y=hex_lat, colour=distance)) +
+  geom_polygon(data=sa2_map %>% filter(STE_NAME16=="Australian Capital Territory"),aes(
+    x = long,
+    y = lat,
+    group = group), fill="white"
+  ) +
+  geom_point(data=act, aes(x=hex_long, y=hex_lat, colour=distance))
+
+
+
+
+
+
+
+
+
 
