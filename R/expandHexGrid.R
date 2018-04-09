@@ -142,9 +142,9 @@ qldGrid <- qldGrid %>%
 
 
 # New South Wales
-# use long, lat, radius to create a grid
+# Not enough points in ACT to allocate all areas, included with NSW to allow more space
 
-nswSPDF <- subset(sa2Small, STE_NAME16=="New South Wales")
+nswSPDF <- subset(sa2Small, STE_NAME16=="New South Wales" | STE_NAME16== "Australian Capital Territory")
 
 bboxnsw <- nswSPDF@bbox %>% as.data.frame()
 rownames(bboxnsw) <- c("long", "lat")
@@ -158,23 +158,6 @@ nswGrid <- nswGrid %>%
   mutate(lat = ifelse(row_number() %% 2 == 1, lat, lat +(0.23/2)))
 
 
-
-
-# Australian Capital Territory
-# use long, lat, radius to create a grid
-
-actSPDF <- subset(sa2Small, STE_NAME16=="New South Wales")
-
-bboxact <- actSPDF@bbox %>% as.data.frame()
-rownames(bboxact) <- c("long", "lat")
-
-# create grid that hexagons could be assigned to
-actGrid <- expand.grid(long = seq(bboxact[1,1], bboxact[1,2], radius),
-                       lat = seq(bboxact[2,1], bboxact[2,2], radius))
-
-# move every second row right by 0.23/2
-actGrid <- actGrid %>% 
-  mutate(lat = ifelse(row_number() %% 2 == 1, lat, lat +(0.23/2)))
 
 
 # Assigning hexagons function
@@ -224,62 +207,79 @@ assign_hexagons <- function(long_c, lat_c, hex_long, hex_lat) {
 
 
 #
-assign_hexagons(data$long, data$lat, waGrid$long, waGrid$lat) ->ah
 
 
 # APPLY ASSIGN POLYGONS TO REGIONS
 # create ordered list to allocate hexagons 
-sa2_map %>% filter(STE_NAME16=="New South Wales") %>%
+sa2_map %>% filter(STE_NAME16=="New South Wales" | STE_NAME16== "Australian Capital Territory")%>%
   arrange(desc(population)) %>%
   distinct(id, .keep_all = T) %>%
-  bind_cols(., assign_hexagons(.$long, .$lat, nswGrid$long, nswGrid$lat)) -> nswGridAllocations
+  bind_cols(., assign_hexagons(.$long, .$lat, nswGrid$long, nswGrid$lat)) -> actGridAllocations
 
 
 #plot all Australia
 
+myPalette <- colorRampPalette(rev(brewer.pal(9, "Greens")))
+sc <- scale_fill_gradientn(colours = myPalette(100), limits=c(1, 400000))
+
 ggplot() +
+  sc +
+  coord_equal() +
+  guides(fill = FALSE) +
+  theme_void()  +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "transparent", colour = NA),
+    plot.background = element_rect(fill = "transparent", colour = NA)
+  ) +
   geom_polygon(data=sa2_map %>% filter(STE_NAME16=="Victoria"),aes(
     x = long,
     y = lat,
-    group = group), fill="white"
+    group = group), fill="grey"
   ) +
-  geom_point(data=hexagons, aes(x=hex_long, y=hex_lat, colour=distance)) +
+  geom_point(data=hexagons, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7) +
   geom_polygon(data=sa2_map %>% filter(STE_NAME16=="Tasmania"),aes(
   x = long,
   y = lat,
-  group = group), fill="white"
+  group = group), fill="grey"
 ) +
-  geom_point(data=tas, aes(x=hex_long, y=hex_lat, colour=distance))+
+  geom_point(data=tas, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7)+
   geom_polygon(data=sa2_map %>% filter(STE_NAME16=="Western Australia"),aes(
     x = long,
     y = lat,
-    group = group), fill="white"
+    group = group), fill="grey"
   ) +
-  geom_point(data=ah, aes(x=hex_long, y=hex_lat, colour=distance))+
+  geom_point(data=ah, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7)+
   geom_polygon(data=sa2_map %>% filter(STE_NAME16=="South Australia"),aes(
     x = long,
     y = lat,
-    group = group), fill="white"
+    group = group), fill="grey"
   ) +
-  geom_point(data=sa, aes(x=hex_long, y=hex_lat, colour=distance))+
+  geom_point(data=sa, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7)+
   geom_polygon(data=sa2_map %>% filter(STE_NAME16=="Northern Territory"),aes(
     x = long,
     y = lat,
-    group = group), fill="white"
+    group = group), fill="grey"
   ) +
-  geom_point(data=nt, aes(x=hex_long, y=hex_lat, colour=distance))+
+  geom_point(data=nt, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7)+
   geom_polygon(data=sa2_map %>% filter(STE_NAME16=="Queensland"),aes(
     x = long,
     y = lat,
-    group = group), fill="white"
+    group = group), fill="grey"
   ) +
-  geom_point(data=qld, aes(x=hex_long, y=hex_lat, colour=distance)) +
+  geom_point(data=qld, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7) +
   geom_polygon(data=sa2_map %>% filter(STE_NAME16=="Australian Capital Territory"),aes(
     x = long,
     y = lat,
-    group = group), fill="white"
+    group = group), fill="grey"
   ) +
-  geom_point(data=act, aes(x=hex_long, y=hex_lat, colour=distance))
+  geom_polygon(data=sa2_map %>% filter(STE_NAME16=="New South Wales"),aes(
+    x = long,
+    y = lat,
+    group = group), fill="grey"
+  ) +
+  geom_point(data=nswGridAllocations, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7)
 
 
 
