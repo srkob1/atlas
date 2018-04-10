@@ -157,15 +157,35 @@ latList <- nswGrid %>% select(lat) %>% distinct()
 # list of latitudes to shift (every second)
 latShift <- latList %>% filter(row_number() %% 2 == 1) 
 
-# move every second row right by 0.23/2
-nswGrid <- nswGrid %>%
-  mutate(lat = ifelse(row_number() %% 2 == 1, lat, lat +(0.23/2)))
-
-
-
 
 # move rows in list right by 0.23/2
 nswGrid <- nswGrid %>% rowwise %>%
+  mutate(long = ifelse(lat %in% latShift$lat, long, long + (0.23/2)))
+
+
+
+# New South Wales
+# Not enough points in ACT to allocate all areas, included with aus to allow more space
+
+ausSPDF <- sa2Small
+bboxaus <- ausSPDF@bbox %>% as.data.frame()
+rownames(bboxaus) <- c("long", "lat")
+bboxaus[1,2] <- 155.00
+
+# create grid that hexagons could be assigned to
+ausGrid <- expand.grid(long = seq(bboxaus[1,1], bboxaus[1,2], radius),
+                       lat = seq(bboxaus[2,1], bboxaus[2,2], radius))
+
+
+# to fix shifts in grid
+# list of all latitudes
+latList <- ausGrid %>% select(lat) %>% distinct()
+# list of latitudes to shift (every second)
+latShift <- latList %>% filter(row_number() %% 2 == 1) 
+
+
+# move rows in list right by 0.23/2
+ausGrid <- ausGrid %>% rowwise %>%
   mutate(long = ifelse(lat %in% latShift$lat, long, long + (0.23/2)))
 
 # Assigning hexagons function
@@ -219,10 +239,10 @@ assign_hexagons <- function(long_c, lat_c, hex_long, hex_lat) {
 
 # APPLY ASSIGN POLYGONS TO REGIONS
 # create ordered list to allocate hexagons
-sa2_map %>% filter(STE_NAME16=="New South Wales" | STE_NAME16== "Australian Capital Territory")%>%
+sa2_map %>% 
   arrange(desc(population)) %>%
   distinct(id, .keep_all = T) %>%
-  bind_cols(., assign_hexagons(.$long, .$lat, nswGrid$long, nswGrid$lat)) -> actGridAllocations
+  bind_cols(., assign_hexagons(.$long, .$lat, ausGrid$long, ausGrid$lat)) -> ausGridAllocations
 
 
 #plot all Australia
@@ -308,7 +328,12 @@ ggplot() +
 
   
   ggplot() +
-    geom_point(data=nswGrid, aes(x=long, y=lat))+
+    geom_polygon(data=sa2_map,aes(
+      x = long,
+      y = lat,
+      group = group), fill="grey"
+    ) +
+    geom_point(data=ausGridAllocations, aes(x=hex_long, y=hex_lat), size=0.5)+
     coord_equal() +
     theme_void()  +
     theme(
