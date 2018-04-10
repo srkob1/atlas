@@ -11,8 +11,10 @@ library(geogrid)
 library(RColorBrewer)
 library(geosphere)
 
-load("~/atlas/data/sa2Small.Rda")
-load("~/atlas/data/sa2_map.Rda")
+load("data/sa2Small.Rda")
+load("data/sa2_map.Rda")
+
+sa2_map <- sa2_map %>% filter(!(SA2_NAME16=="Norfolk Island"))
 
 vicSPDF <- subset(sa2Small, STE_NAME16=="Victoria")
 
@@ -65,13 +67,6 @@ waGrid <- expand.grid(long = seq(bboxwa[1,1], bboxwa[1,2], radius),
 waGrid <- waGrid %>% 
   mutate(lat = ifelse(row_number() %% 2 == 1, lat, lat +(0.23/2)))
 
-ggplot(data=sa2_map %>% filter(STE_NAME16=="Western Australia")) +
-  geom_polygon(aes(
-    x = long,
-    y = lat,
-    group = group
-  )) +
-  geom_point(data=waGrid, aes(x=long, y=lat))
 
 # TASMANIA
 # use long, lat, radius to create a grid
@@ -148,17 +143,21 @@ nswSPDF <- subset(sa2Small, STE_NAME16=="New South Wales" | STE_NAME16== "Austra
 
 bboxnsw <- nswSPDF@bbox %>% as.data.frame()
 rownames(bboxnsw) <- c("long", "lat")
+bboxnsw[1,2] <- 155.00
 
 # create grid that hexagons could be assigned to
 nswGrid <- expand.grid(long = seq(bboxnsw[1,1], bboxnsw[1,2], radius),
                        lat = seq(bboxnsw[2,1], bboxnsw[2,2], radius))
 
-# move every second row right by 0.23/2
-nswGrid <- nswGrid %>% 
-  mutate(lat = ifelse(row_number() %% 2 == 1, lat, lat +(0.23/2)))
+# to fix shifts in grid
+# list of all latitudes
+latList <- nswGrid %>% select(lat) %>% distinct()
+# list of latitudes to shift (every second)
+latShift <- latList %>% filter(row_number() %% 2 == 1) 
 
-
-
+# move rows in list right by 0.23/2
+nswGrid <- nswGrid %>% rowwise %>%
+  mutate(long = ifelse(lat %in% latShift$lat, long, long + (0.23/2)))
 
 # Assigning hexagons function
 hex_centroids <-NULL
@@ -225,7 +224,7 @@ sc <- scale_fill_gradientn(colours = myPalette(100), limits=c(1, 400000))
 ggplot() +
   sc +
   coord_equal() +
-  guides(fill = FALSE) +
+  guides(colour = FALSE) +
   theme_void()  +
   theme(
     panel.grid.major = element_blank(),
@@ -278,8 +277,17 @@ ggplot() +
     x = long,
     y = lat,
     group = group), fill="grey"
-  ) +
-  geom_point(data=nswGridAllocations, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7)
+  ) 
+  
+  
+  ggplot() +
+    geom_polygon(data=sa2_map %>% filter(STE_NAME16=="New South Wales"),aes(
+      x = long,
+      y = lat,
+      group = group), fill="grey"
+    ) +
+  geom_point(data=nswGridAllocations, 
+             aes(x=hex_long, y=hex_lat, colour=distance), size=2, alpha=0.5)
 
 
 
@@ -289,4 +297,14 @@ ggplot() +
 
 
 
-
+  
+  ggplot() +
+    geom_point(data=nswGrid, aes(x=long, y=lat))+
+    coord_equal() +
+    theme_void()  +
+    theme(
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.background = element_rect(fill = "transparent", colour = NA),
+      plot.background = element_rect(fill = "transparent", colour = NA)
+    )
