@@ -167,10 +167,15 @@ nswGrid <- nswGrid %>% rowwise %>%
 # New South Wales
 # Not enough points in ACT to allocate all areas, included with aus to allow more space
 
+# Aus radius
+radius <-0.45
+
 ausSPDF <- sa2Small
 bboxaus <- ausSPDF@bbox %>% as.data.frame()
 rownames(bboxaus) <- c("long", "lat")
-bboxaus[1,2] <- 155.00
+#disregard Islands
+bboxaus[1,1] <- 111.00
+bboxaus[1,2] <- 154.00
 
 # create grid that hexagons could be assigned to
 ausGrid <- expand.grid(long = seq(bboxaus[1,1], bboxaus[1,2], radius),
@@ -261,52 +266,17 @@ ggplot() +
     panel.background = element_rect(fill = "transparent", colour = NA),
     plot.background = element_rect(fill = "transparent", colour = NA)
   ) +
-  geom_polygon(data=sa2_map %>% filter(STE_NAME16=="Victoria"),aes(
+  geom_polygon(data=sa2_map,aes(
     x = long,
     y = lat,
     group = group), fill="grey"
   ) +
-  geom_point(data=hexagons, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7) +
-  geom_polygon(data=sa2_map %>% filter(STE_NAME16=="Tasmania"),aes(
-  x = long,
-  y = lat,
-  group = group), fill="grey"
-) +
-  geom_point(data=tas, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7)+
-  geom_polygon(data=sa2_map %>% filter(STE_NAME16=="Western Australia"),aes(
-    x = long,
-    y = lat,
-    group = group), fill="grey"
-  ) +
-  geom_point(data=ah, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7)+
-  geom_polygon(data=sa2_map %>% filter(STE_NAME16=="South Australia"),aes(
-    x = long,
-    y = lat,
-    group = group), fill="grey"
-  ) +
-  geom_point(data=sa, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7)+
-  geom_polygon(data=sa2_map %>% filter(STE_NAME16=="Northern Territory"),aes(
-    x = long,
-    y = lat,
-    group = group), fill="grey"
-  ) +
-  geom_point(data=nt, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7)+
-  geom_polygon(data=sa2_map %>% filter(STE_NAME16=="Queensland"),aes(
-    x = long,
-    y = lat,
-    group = group), fill="grey"
-  ) +
-  geom_point(data=qld, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7) +
-  geom_polygon(data=sa2_map %>% filter(STE_NAME16=="Australian Capital Territory"),aes(
-    x = long,
-    y = lat,
-    group = group), fill="grey"
-  ) +
-  geom_polygon(data=sa2_map %>% filter(STE_NAME16=="New South Wales"),aes(
-    x = long,
-    y = lat,
-    group = group), fill="grey"
-  ) 
+  geom_point(data=vicGridAllocations, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7)+
+  geom_point(data=tasGridAllocations, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7)+
+  geom_point(data=nswGridAllocations, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7)+
+  geom_point(data=saGridAllocations, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7)+
+  geom_point(data=ntGridAllocations, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7)+
+  geom_point(data=qldGridAllocations, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7) +
   
   
   ggplot() +
@@ -322,19 +292,23 @@ ggplot() +
 
 
 
-
+  ausGridAllocations %>% 
+    filter(hex_long> 111.0) -> ausGridMainland
+  
 
 
 
   
-  ggplot() +
+ plot<- ggplot() +
     geom_polygon(data=sa2_map,aes(
       x = long,
       y = lat,
       group = group), fill="grey"
     ) +
-    geom_point(data=ausGridAllocations, aes(x=hex_long, y=hex_lat), size=0.5)+
+    geom_point(data=ausGridMainland, 
+               aes(x=hex_long, y=hex_lat, colour=STE_NAME16,label=SA2_NAME16), size=0.5)+
     coord_equal() +
+    guides(colour=FALSE)+
     theme_void()  +
     theme(
       panel.grid.major = element_blank(),
@@ -342,3 +316,22 @@ ggplot() +
       panel.background = element_rect(fill = "transparent", colour = NA),
       plot.background = element_rect(fill = "transparent", colour = NA)
     )
+plotly::ggplotly(plot)
+
+ggplot() +
+  geom_polygon(data=sa2_map,aes(
+    x = long,
+    y = lat,
+    group = group), fill="grey"
+  ) +
+  geom_point(data=ausGrid, 
+             aes(x=long, y=lat), size=0.5)+
+  coord_equal() +
+  guides(colour=FALSE)+
+  theme_void()  +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "transparent", colour = NA),
+    plot.background = element_rect(fill = "transparent", colour = NA)
+  )
