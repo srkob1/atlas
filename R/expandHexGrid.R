@@ -13,11 +13,9 @@ library(geosphere)
 
 load("data/sa2Small.Rda")
 load("data/sa2_map.Rda")
-<<<<<<< HEAD
+
 
 sa2_map <- sa2_map %>% filter(!(SA2_NAME16=="Norfolk Island"))
-=======
->>>>>>> 93f6d9046655a0199ed57ed28e20901544c1457e
 
 vicSPDF <- subset(sa2Small, STE_NAME16=="Victoria")
 
@@ -152,19 +150,19 @@ bboxnsw[1,2] <- 155.00
 nswGrid <- expand.grid(long = seq(bboxnsw[1,1], bboxnsw[1,2], radius),
                        lat = seq(bboxnsw[2,1], bboxnsw[2,2], radius))
 
-<<<<<<< HEAD
+
 # to fix shifts in grid
 # list of all latitudes
 latList <- nswGrid %>% select(lat) %>% distinct()
 # list of latitudes to shift (every second)
 latShift <- latList %>% filter(row_number() %% 2 == 1) 
-=======
+
 # move every second row right by 0.23/2
 nswGrid <- nswGrid %>%
   mutate(lat = ifelse(row_number() %% 2 == 1, lat, lat +(0.23/2)))
 
 
->>>>>>> 93f6d9046655a0199ed57ed28e20901544c1457e
+
 
 # move rows in list right by 0.23/2
 nswGrid <- nswGrid %>% rowwise %>%
