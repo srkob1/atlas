@@ -11,8 +11,8 @@ library(geogrid)
 library(RColorBrewer)
 library(geosphere)
 
-load("~/atlas/data/sa2Small.Rda")
-load("~/atlas/data/sa2_map.Rda")
+load("data/sa2Small.Rda")
+load("data/sa2_map.Rda")
 
 vicSPDF <- subset(sa2Small, STE_NAME16=="Victoria")
 
@@ -36,7 +36,7 @@ vicGrid <- expand.grid(long = seq(bboxvic[1,1], bboxvic[1,2], radius),
 lat = seq(bboxvic[2,1], bboxvic[2,2], radius))
 
 # move every second row right by 0.23/2
-vicGrid <- vicGrid %>% 
+vicGrid <- vicGrid %>%
   mutate(lat = ifelse(row_number() %% 2 == 1, lat, lat +(0.23/2)))
 
 
@@ -62,7 +62,7 @@ waGrid <- expand.grid(long = seq(bboxwa[1,1], bboxwa[1,2], radius),
                        lat = seq(bboxwa[2,1], bboxwa[2,2], radius))
 
 # move every second row right by 0.23/2
-waGrid <- waGrid %>% 
+waGrid <- waGrid %>%
   mutate(lat = ifelse(row_number() %% 2 == 1, lat, lat +(0.23/2)))
 
 ggplot(data=sa2_map %>% filter(STE_NAME16=="Western Australia")) +
@@ -85,7 +85,7 @@ tasGrid <- expand.grid(long = seq(bboxtas[1,1], bboxtas[1,2], radius),
                       lat = seq(bboxtas[2,1], bboxtas[2,2], radius))
 
 # move every second row right by 0.23/2
-waGrid <- waGrid %>% 
+waGrid <- waGrid %>%
   mutate(lat = ifelse(row_number() %% 2 == 1, lat, lat +(0.23/2)))
 
 
@@ -102,7 +102,7 @@ ntGrid <- expand.grid(long = seq(bboxnt[1,1], bboxnt[1,2], radius),
                       lat = seq(bboxnt[2,1], bboxnt[2,2], radius))
 
 # move every second row right by 0.23/2
-ntGrid <- ntGrid %>% 
+ntGrid <- ntGrid %>%
   mutate(lat = ifelse(row_number() %% 2 == 1, lat, lat +(0.23/2)))
 
 
@@ -119,7 +119,7 @@ saGrid <- expand.grid(long = seq(bboxsa[1,1], bboxsa[1,2], radius),
                       lat = seq(bboxsa[2,1], bboxsa[2,2], radius))
 
 # move every second row right by 0.23/2
-saGrid <- saGrid %>% 
+saGrid <- saGrid %>%
   mutate(lat = ifelse(row_number() %% 2 == 1, lat, lat +(0.23/2)))
 
 
@@ -136,7 +136,7 @@ qldGrid <- expand.grid(long = seq(bboxqld[1,1], bboxqld[1,2], radius),
                       lat = seq(bboxqld[2,1], bboxqld[2,2], radius))
 
 # move every second row right by 0.23/2
-qldGrid <- qldGrid %>% 
+qldGrid <- qldGrid %>%
   mutate(lat = ifelse(row_number() %% 2 == 1, lat, lat +(0.23/2)))
 
 
@@ -154,7 +154,7 @@ nswGrid <- expand.grid(long = seq(bboxnsw[1,1], bboxnsw[1,2], radius),
                        lat = seq(bboxnsw[2,1], bboxnsw[2,2], radius))
 
 # move every second row right by 0.23/2
-nswGrid <- nswGrid %>% 
+nswGrid <- nswGrid %>%
   mutate(lat = ifelse(row_number() %% 2 == 1, lat, lat +(0.23/2)))
 
 
@@ -164,44 +164,44 @@ nswGrid <- nswGrid %>%
 hex_centroids <-NULL
 
 assign_hexagons <- function(long_c, lat_c, hex_long, hex_lat) {
-  # consider each hexagon 
+  # consider each hexagon
   hexVec <- NULL
-  
+
   # check for equal length
   stopifnot(length(long_c) ==length(lat_c))
-  
+
   # create a tibble of all available grid points to allocate an area to
   grid <- cbind(hex_long, hex_lat) %>% as.tibble %>%
     mutate(id = 1:length(hex_long),
            assigned = ifelse(id %in% hexVec, TRUE, FALSE))
-  
+
   # for each area to be allocated to a grid point
   for (i in 1:NROW(long_c)) {
     print(i)
     olong <- long_c[i]
     olat <- lat_c[i]
-    
-    
+
+
     grid_nasgn <- grid %>% filter(!assigned)
-    
+
     distance <- distVincentyEllipsoid(
       c(olong, olat), grid_nasgn,
         a=6378249.145, b=6356514.86955, f=1/293.465)
-    mindist_id <- cbind(grid_nasgn, distance) %>% 
+    mindist_id <- cbind(grid_nasgn, distance) %>%
       arrange(distance)
-    
+
     id <- mindist_id$id[1]
-    
+
     grid$assigned[id] <- TRUE
-    
+
     hexVec <- c(hexVec, id)
-    
+
     new_centroid <- mindist_id[1,]
-    
+
     hex_centroids <- bind_rows(hex_centroids, new_centroid)
-    
+
   }
-  
+
   return(hex_centroids)
 }
 
@@ -210,7 +210,7 @@ assign_hexagons <- function(long_c, lat_c, hex_long, hex_lat) {
 
 
 # APPLY ASSIGN POLYGONS TO REGIONS
-# create ordered list to allocate hexagons 
+# create ordered list to allocate hexagons
 sa2_map %>% filter(STE_NAME16=="New South Wales" | STE_NAME16== "Australian Capital Territory")%>%
   arrange(desc(population)) %>%
   distinct(id, .keep_all = T) %>%
