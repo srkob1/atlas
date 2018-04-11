@@ -14,8 +14,8 @@ library(geosphere)
 load("data/sa2Small.Rda")
 load("data/sa2_map.Rda")
 
-
-sa2_map <- sa2_map %>% filter(!(SA2_NAME16=="Norfolk Island"))
+# Remove Islands
+sa2_map <- sa2_map %>% filter(!(STE_NAME16=="Other Territories")) %>% filter(!(SA2_NAME16=="Lord Howe Island"))
 
 vicSPDF <- subset(sa2Small, STE_NAME16=="Victoria")
 
@@ -168,14 +168,13 @@ nswGrid <- nswGrid %>% rowwise %>%
 # Not enough points in ACT to allocate all areas, included with aus to allow more space
 
 # Aus radius
-radius <-0.45
+radius <-0.3
 
-ausSPDF <- sa2Small
+ausSPDF <- subset(sa2Small, (STE_NAME16!="Other Territories"))
+ausSPDF <- subset(ausSPDF, (SA2_NAME16!="Lord Howe Island"))
+
 bboxaus <- ausSPDF@bbox %>% as.data.frame()
 rownames(bboxaus) <- c("long", "lat")
-#disregard Islands
-bboxaus[1,1] <- 111.00
-bboxaus[1,2] <- 154.00
 
 # create grid that hexagons could be assigned to
 ausGrid <- expand.grid(long = seq(bboxaus[1,1], bboxaus[1,2], radius),
@@ -191,7 +190,35 @@ latShift <- latList %>% filter(row_number() %% 2 == 1)
 
 # move rows in list right by 0.23/2
 ausGrid <- ausGrid %>% rowwise %>%
-  mutate(long = ifelse(lat %in% latShift$lat, long, long + (0.23/2)))
+  mutate(long = ifelse(lat %in% latShift$lat, long, long + (0.3/2)))
+
+
+#keep only the points within the buffer
+# convert to sf
+sf_ausSPDF <- st_as_sf(ausSPDF)
+sf_ausSPDFgeo <- st_union(sf_ausSPDF$geometry)
+# convert to list of geometries
+aus <- st_transform(sf_ausSPDFgeo, "+proj=longlat +datum=NAD27 +no_defs")
+ggplot() + geom_sf(data = aus)
+
+aus4 <- st_transform(sf_ausSPDFgeo, 4267)
+# needs to be in metres
+#aus4_buffer <- st_buffer(aus4, 100000)
+
+#plot(aus4, add = TRUE)
+#plot(aus4_buffer, add = TRUE, border = 'blue')
+
+  
+ggplot() +
+  geom_polygon(data=sa2_map,aes(
+    x = long,
+    y = lat,
+    group = group), fill="grey"
+  )
+
+
+
+
 
 # Assigning hexagons function
 hex_centroids <-NULL
@@ -269,7 +296,7 @@ ggplot() +
   geom_polygon(data=sa2_map,aes(
     x = long,
     y = lat,
-    group = group), fill="grey"
+    group = group), fill="grey" 
   ) +
   geom_point(data=vicGridAllocations, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7)+
   geom_point(data=tasGridAllocations, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7)+
@@ -305,7 +332,7 @@ ggplot() +
       y = lat,
       group = group), fill="grey"
     ) +
-    geom_point(data=ausGridMainland, 
+   geom_point(data=ausGridMainland, 
                aes(x=hex_long, y=hex_lat, colour=STE_NAME16,label=SA2_NAME16), size=0.5)+
     coord_equal() +
     guides(colour=FALSE)+
@@ -317,21 +344,3 @@ ggplot() +
       plot.background = element_rect(fill = "transparent", colour = NA)
     )
 plotly::ggplotly(plot)
-
-ggplot() +
-  geom_polygon(data=sa2_map,aes(
-    x = long,
-    y = lat,
-    group = group), fill="grey"
-  ) +
-  geom_point(data=ausGrid, 
-             aes(x=long, y=lat), size=0.5)+
-  coord_equal() +
-  guides(colour=FALSE)+
-  theme_void()  +
-  theme(
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-    panel.background = element_rect(fill = "transparent", colour = NA),
-    plot.background = element_rect(fill = "transparent", colour = NA)
-  )
