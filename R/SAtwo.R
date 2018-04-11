@@ -10,13 +10,13 @@ library(hexmapr)
 
 # download from web address:
 
-# http://www.ausstats.abs.gov.au/ausstats/subscriber.nsf/0/A09309ACB3FA50B8CA257FED0013D420/$File/1270055001_sa2_2016_aust_shape.zip
+#http://www.ausstats.abs.gov.au/ausstats/subscriber.nsf/0/A09309ACB3FA50B8CA257FED0013D420/$File/1270055001_sa2_2016_aust_shape.zip
 
 SAtwo = readOGR(dsn="./data/SA2_2016_AUST.shp", layer="SA2_2016_AUST")
 SAtwo@data$id = rownames(SAtwo@data)
-SAtwos <- rmapshaper::ms_simplify(SAtwo, keep=0.05)
-SAtwos.points = fortify(SAtwos, region="id")
-SAtwos.df = full_join(SAtwos.points, SAtwos@data, by="id")
+sa2Small <- rmapshaper::ms_simplify(SAtwo, keep=0.05)
+sa2Small.points = fortify(sa2Small, region="id")
+sa2Small.df = full_join(sa2Small.points, sa2Small@data, by="id")
 
 polys <- as(SAtwo, "SpatialPolygons")
 
@@ -30,9 +30,9 @@ centroids <- seq_along(polys) %>% purrr::map_df(centroid, polys=polys)
 
 #join the centroids to full data set
 
-SAtwos.df <- full_join(SAtwos.df, centroids)
+sa2Small.df <- full_join(sa2Small.df, centroids)
 
-melb <- SAtwos.df %>% mutate(code = as.numeric(SA3_CODE16)) %>%
+melb <- sa2Small.df %>% mutate(code = as.numeric(SA3_CODE16)) %>%
   filter(GCC_CODE16=="2GMEL")
 
 ggplot(data=melb) +
@@ -62,8 +62,8 @@ ggplot(melb) +
 #Hex Mapping
 
 
-melbSPDF <- subset(SAtwos, GCC_CODE16=="2GMEL")
-vicSPDF <- subset(SAtwos, STE_NAME16=="Victoria")
+melbSPDF <- subset(sa2Small, GCC_CODE16=="2GMEL")
+vicSPDF <- subset(sa2Small, STE_NAME16=="Victoria")
 
 
 new_cells <- calculate_grid(shape = melbSPDF, grid_type = "hexagonal", seed = 1994)
@@ -110,8 +110,8 @@ hexmelb@data$id = rownames(shape@data)
 shape.points = fortify(shape, region="id")
 shape.df = merge(shape.points, shape@data, by="id")
 
-SAtwos.points = fortify(SAtwos, region="id")
-SAtwos.df = full_join(SAtwos.points, SAtwos@data, by="id")
+sa2Small.points = fortify(sa2Small, region="id")
+sa2Small.df = full_join(sa2Small.points, sa2Small@data, by="id")
 
 hexplot <- ggplot(hexmelb) +
   geom_polygon(aes(x = long, y = lat, group = group)) +
