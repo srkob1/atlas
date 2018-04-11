@@ -155,7 +155,7 @@ nswGrid <- expand.grid(long = seq(bboxnsw[1,1], bboxnsw[1,2], radius),
 # list of all latitudes
 latList <- nswGrid %>% select(lat) %>% distinct()
 # list of latitudes to shift (every second)
-latShift <- latList %>% filter(row_number() %% 2 == 1) 
+latShift <- latList %>% filter(row_number() %% 2 == 1)
 
 
 # move rows in list right by 0.23/2
@@ -185,7 +185,7 @@ ausGrid <- expand.grid(long = seq(bboxaus[1,1], bboxaus[1,2], radius),
 # list of all latitudes
 latList <- ausGrid %>% select(lat) %>% distinct()
 # list of latitudes to shift (every second)
-latShift <- latList %>% filter(row_number() %% 2 == 1) 
+latShift <- latList %>% filter(row_number() %% 2 == 1)
 
 
 # move rows in list right by 0.23/2
@@ -271,7 +271,7 @@ assign_hexagons <- function(long_c, lat_c, hex_long, hex_lat) {
 
 # APPLY ASSIGN POLYGONS TO REGIONS
 # create ordered list to allocate hexagons
-sa2_map %>% 
+sa2_map %>%
   arrange(desc(population)) %>%
   distinct(id, .keep_all = T) %>%
   bind_cols(., assign_hexagons(.$long, .$lat, ausGrid$long, ausGrid$lat)) -> ausGridAllocations
@@ -306,13 +306,14 @@ ggplot() +
   geom_point(data=qldGridAllocations, aes(x=hex_long, y=hex_lat, colour=distance), size=0.7) +
   
   
+    
   ggplot() +
     geom_polygon(data=sa2_map %>% filter(STE_NAME16=="New South Wales"),aes(
       x = long,
       y = lat,
       group = group), fill="grey"
     ) +
-  geom_point(data=nswGridAllocations, 
+  geom_point(data=nswGridAllocations,
              aes(x=hex_long, y=hex_lat, colour=distance), size=2, alpha=0.5)
 
 
@@ -325,7 +326,6 @@ ggplot() +
 
 
 
-  
  plot<- ggplot() +
     geom_polygon(data=sa2_map,aes(
       x = long,
@@ -344,3 +344,19 @@ ggplot() +
       plot.background = element_rect(fill = "transparent", colour = NA)
     )
 plotly::ggplotly(plot)
+
+
+# load data
+library(ggthemes)
+load("ausGridAllocations.Rda")
+load("data/sa2_map.Rda")
+
+ggplot() +
+  geom_polygon(data=sa2_map, aes(
+    x = long,
+    y = lat,
+    group = group), fill="grey"
+  ) +
+  geom_point(data=ausGridAllocations,
+             aes(x=hex_long, y=hex_lat), size=0.5, alpha=0.5) +
+  theme_map()
