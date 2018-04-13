@@ -1,71 +1,103 @@
 # This file has the code to actually create the Oz hexmap
-# Australia 
+# Australia
 library(tidyverse)
 library(geosphere)
 library(hexbin)
+library(gridExtra)
+library(ggthemes)
+library(plotly)
 
-load("data/sa2Small.Rda")
-load("data/sa2_map.Rda")
+load("data/sa2.Rda")
+load("data/sa2_tidy.Rda")
 
-# Find the functions to use
-source("hexmap/hexagon.R")
+# Remove islands because we think they are not used in the atlas
+# If they are, we simply need to shift them closer to the mainland
+# to automatically lay out
+sa2 <- subset(sa2, (STE_NAME16 != "Other Territories"))
+sa2 <- subset(sa2, (SA2_NAME16 != "Lord Howe Island"))
 
-# subset to remove Islands
-ausSPDF <- subset(sa2Small, (STE_NAME16!="Other Territories"))
-ausSPDF <- subset(ausSPDF, (SA2_NAME16!="Lord Howe Island"))
-
-sa2_map <- sa2_map %>% 
+sa2_tidy <- sa2_tidy %>%
   filter(STE_NAME16!="Other Territories") %>%
   filter(SA2_NAME16!="Lord Howe Island")
 
-# set radius for Australian map
+# Arrange original centroid data
+# Create a data frame containing long, lat
+library(maptools)
+get_centroid <- function(i, polys) {
+  ctr <- polys[[i]]@labpt
+  id <- polys[[i]]@ID
+  data.frame(long=ctr[1], lat=ctr[2], id=id)
+}
+centroids <- seq_along(sa2@polygons) %>% purrr::map_df(get_centroid, polys=sa2@polygons)
+centroids <- centroids %>%
+  mutate(name = sa2@data$SA2_NAME16,
+         pop = sa2@data$population,
+         area = sa2@data$AREASQKM16)
+
+# Find the functions to use
+source("hexagon.R")
+
+# Set radius for hexagons to layout a reasonable grid for the country
+# DI SAYS: Code to get some estimate on this is in XXX
 radius <- 0.3
 
-# Arrange original centroid data
-centroid_data <- NULL
-for (i in 1:length(ausSPDF@polygons)) {
-   centroid_data$long[i] <- ausSPDF@polygons[[i]]@labpt[1]
-   centroid_data$lat[i] <- ausSPDF@polygons[[i]]@labpt[2]
-   centroid_data$SA2_NAME16[i] <- ausSPDF@data$SA2_NAME16[which(ausSPDF@data$id == ausSPDF@polygons[[i]]@ID)] 
-   centroid_data$population[i] <- ausSPDF@data$population[which(ausSPDF@data$id == ausSPDF@polygons[[i]]@ID)]
-   centroid_data$AREASQKM16[i] <- ausSPDF@data$population[which(ausSPDF@data$id == ausSPDF@polygons[[i]]@ID)]
-}
+# Create hexagon grid
+grid <- create_grid(sa2@bbox, radius)
+grid <- grid %>% mutate(id=1:nrow(grid), assigned=FALSE)
 
-# Arrange grid data
-grid <- create_grid(ausSPDF@bbox, radius) %>%
-  cbind(., id = 1:NROW(.), assigned = rep(FALSE, NROW(.)))
+# Mapping SA2 to closest hexagon grid, in order of population,
+# and then distance
+sa2_hex <- centroids %>%
+  arrange(desc(pop)) %>%
+  assign_hexagons(., grid)
 
-# order centroids for allocation
-map_dfc(centroid_data, unlist) %>%
-  arrange(desc(population)) %>%
-  bind_cols(., assign_hexagons(centroid_data, grid)) -> aus_centroids
+# Checks
+ggplot(sa2_hex, aes(x=hex_long, y=hex_lat, colour=name)) + geom_point() + geom_point(aes(x=long, y=lat), shape=2)
+p1 <- ggplot(sa2_hex, aes(x=long, y=hex_long, colour=rank(desc(pop)))) +
+  geom_abline(slope=1, intercept=0) + geom_point(alpha=0.1) +
+  theme(aspect.ratio=1, legend.position="none")
+p2 <- ggplot(sa2_hex, aes(x=lat, y=hex_lat, colour=rank(desc(pop)))) +
+  geom_abline(slope=1, intercept=0) + geom_point(alpha=0.1) +
+  theme(aspect.ratio=1, legend.position="none")
+grid.arrange(p1, p2, ncol=2)
 
-# Data needs to be output
-# csv
-write_csv(aus_centroids, path = "hexmap/data/aus_centroids.csv")
-# and rda for us
-save(aus_centroids, file = "hexmap/data/aus_centroids.Rda")
+# Save as csv
+write_csv(sa2_hex, path = "data/sa2_hex.csv")
+# and as Rda
+save(sa2_hex, file = "sa2_hex.Rda")
 load("hexmap/data/aus_centroids.Rda")
 
+ggplot(sa2_tidy) +
+  geom_polygon(aes(x=long, y=lat, group=group),
+               fill="white", colour="grey90") +
+  geom_point(data=sa2_hex, aes(x=hex_long, y=hex_lat, label=name), alpha=0.5) +
+  coord_map() + theme_map()
 
-# Plotting code
-# Points and hexes: inspired by http://unconj.ca/blog/custom-hexbin-functions-with-ggplot.html
-# colour by population
+ggplotly()
 
-(geomap <- ggplot(sa2_map) +
-  geom_polygon(aes(x=long, y=lat, group=group, fill=population, label=SA2_NAME16))
-  )
+# Using ochRe palette jumping_frog
+ggplot(sa2_tidy) +
+  geom_polygon(aes(x=long, y=lat, group=group),
+               fill="white", colour="grey90") +
+  geom_hex(data=sa2_hex, aes(x = hex_long, y = hex_lat,
+                             fill = pop, label=name),
+         stat = "identity", colour = NA, alpha = 0.75) +
+  scale_fill_gradient(low="#c0c030", high="#607848") +
+  theme_map()
 
-(hexmap_pop <-ggplot(aus_centroids) +
-  geom_polygon(data= sa2_map,aes(x=long, y=lat, group=group, fill=population, label=SA2_NAME16))+
-geom_hex(aes(x = hex_long, y = hex_lat, fill = population, label=SA2_NAME16),
-           stat = "identity", colour = NA, alpha = 0.75)
-)
+ggplot(sa2_tidy) +
+  geom_polygon(aes(x=long, y=lat, group=group, fill=population)) +
+  theme_map()
 
-(hexmap_area <-ggplot(aus_centroids) +
-    geom_polygon(data= sa2_map,aes(x=long, y=lat, group=group, fill=population, label=SA2_NAME16))+
-    geom_hex(aes(x = hex_long, y = hex_lat, fill = population, label=SA2_NAME16),
-             stat = "identity", colour = NA, alpha = 0.75)
-)
-# Interactive plot code
+sa2_hex <- sa2_hex %>%
+  left_join(select(sa2_tidy, SA2_NAME16, STE_NAME16, GCC_NAME16), by=c("name"="SA2_NAME16")) %>%
+  rename(state=STE_NAME16, capitals=GCC_NAME16)
 
+ggplot(sa2_tidy) +
+  geom_polygon(aes(x=long, y=lat, group=group),
+               fill="white", colour="grey90") +
+  geom_hex(data=sa2_hex, aes(x = hex_long, y = hex_lat,
+                             fill = STE_NAME16, label=name),
+           stat = "identity", colour=NA, alpha = 0.75) +
+  scale_fill_gradient(low="#c0c030", high="#607848") +
+  theme_map()
