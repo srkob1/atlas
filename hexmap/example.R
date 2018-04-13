@@ -28,6 +28,7 @@ for (i in 1:length(ausSPDF@polygons)) {
    centroid_data$lat[i] <- ausSPDF@polygons[[i]]@labpt[2]
    centroid_data$SA2_NAME16[i] <- ausSPDF@data$SA2_NAME16[which(ausSPDF@data$id == ausSPDF@polygons[[i]]@ID)] 
    centroid_data$population[i] <- ausSPDF@data$population[which(ausSPDF@data$id == ausSPDF@polygons[[i]]@ID)]
+   centroid_data$AREASQKM16[i] <- ausSPDF@data$population[which(ausSPDF@data$id == ausSPDF@polygons[[i]]@ID)]
 }
 
 # Arrange grid data
@@ -41,10 +42,10 @@ map_dfc(centroid_data, unlist) %>%
 
 # Data needs to be output
 # csv
-write_csv(aus_centroids, path = "aus_centroids.csv")
+write_csv(aus_centroids, path = "hexmap/data/aus_centroids.csv")
 # and rda for us
-save(aus_centroids, file = "aus_centroids.Rda")
-
+save(aus_centroids, file = "hexmap/data/aus_centroids.Rda")
+load("hexmap/data/aus_centroids.Rda")
 
 
 # Plotting code
@@ -55,10 +56,16 @@ save(aus_centroids, file = "aus_centroids.Rda")
   geom_polygon(aes(x=long, y=lat, group=group, fill=population, label=SA2_NAME16))
   )
 
-(hexmap <-ggplot(aus_centroids) +
+(hexmap_pop <-ggplot(aus_centroids) +
   geom_polygon(data= sa2_map,aes(x=long, y=lat, group=group, fill=population, label=SA2_NAME16))+
 geom_hex(aes(x = hex_long, y = hex_lat, fill = population, label=SA2_NAME16),
            stat = "identity", colour = NA, alpha = 0.75)
+)
+
+(hexmap_area <-ggplot(aus_centroids) +
+    geom_polygon(data= sa2_map,aes(x=long, y=lat, group=group, fill=population, label=SA2_NAME16))+
+    geom_hex(aes(x = hex_long, y = hex_lat, fill = population, label=SA2_NAME16),
+             stat = "identity", colour = NA, alpha = 0.75)
 )
 # Interactive plot code
 
