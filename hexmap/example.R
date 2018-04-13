@@ -59,8 +59,7 @@ load("hexmap/data/aus_centroids.Rda")
 
 # hex map coloured by population
 (hexmap_pop <-ggplot(aus_centroids) +
-  geom_polygon(data= sa2_map,aes(x=long, y=lat, group=group, fill=population, label=SA2_NAME16))+
-geom_hex(aes(x = hex_long, y = hex_lat, fill = population, label=SA2_NAME16),
+geom_hex(aes(x = long1, y = lat1, fill = population, label=SA2_NAME16),
            stat = "identity", colour = NA, alpha = 0.75)
 )
 
