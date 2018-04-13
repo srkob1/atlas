@@ -10,12 +10,12 @@ create_grid <- function(bbox, radius) {
                                    radius))
 
   # Only shift every second latitude - to make hex structure
-    lat <- grid %>% select(lat) %>%
+  lat <- grid %>% select(hex_lat) %>%
       distinct() %>%
       filter(row_number() %% 2 == 1) %>% unlist()
 
   grid <- grid %>% rowwise %>%
-    mutate(long = ifelse(lat %in% lat, long, long + (radius/2)))
+    mutate(hex_long = ifelse(hex_lat %in% lat, hex_long, hex_long + (radius/2)))
   
   return(grid)
 }
@@ -50,7 +50,7 @@ assign_hexagons <- function(centroid_data, grid_data) {
     grid_nasgn <- grid %>% filter(!assigned)
     
     distance <- distVincentyEllipsoid(
-      c(olong, olat), grid_nasgn,
+      c(olong, olat), c(grid_nasgn$hex_long,grid_nasgn$hex_lat),
       a=6378249.145, b=6356514.86955, f=1/293.465)
     distance_df <- cbind(grid_nasgn, distance) %>%
       arrange(distance)
