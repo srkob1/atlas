@@ -1,0 +1,50 @@
+---
+title: "Australia SA2 choropleth maps and hexmaps"
+author: "Stephanie Kobakian and Di Cook"
+date: "4/13/2018"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, 
+                      message=FALSE, 
+                      error=FALSE, 
+                      warning = FALSE)
+```
+
+
+```{r}
+# Load libraries and data sets
+library(tidyverse)
+library(ggthemes)
+library(gridExtra)
+library(plotly)
+# Tidy format spatial polygons, for easy plotting
+load("data/sa2_tidy.Rda")
+# Hex gridded sa2 regions
+load("data/sa2_hex.Rda")
+```
+ 
+
+# Map coloured by Brisbane ("jumping frog" colour palette from ochRe package)
+
+```{r fig.height=6, fig.width=4}
+library(ochRe)
+sa2_tidy_qld <- sa2_tidy %>% 
+  filter(STE_NAME16 == "Queensland") 
+sa2_hex_qld <- sa2_hex %>% 
+  filter(state == "Queensland") 
+sa2_hex_qld <- sa2_hex_qld %>% mutate(rnorm=rnorm(nrow(sa2_hex_qld)))
+
+p4 <- ggplot(sa2_tidy_qld) +
+  geom_polygon(aes(x=long, y=lat, group=group),
+               fill="white", colour="grey90") +
+  geom_hex(data=sa2_hex_qld, aes(x = hex_long, y = hex_lat,
+                             fill = rnorm, label=name),
+         stat = "identity", colour = NA, alpha = 0.75) +
+  scale_fill_gradient("rnorm", low = "#184848", high = "#c0c030") +
+  theme_map()
+ggplotly(p4)
+```
