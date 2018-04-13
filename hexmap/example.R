@@ -64,8 +64,8 @@ grid.arrange(p1, p2, ncol=2)
 # Save as csv
 write_csv(sa2_hex, path = "data/sa2_hex.csv")
 # and as Rda
-save(sa2_hex, file = "sa2_hex.Rda")
-load("hexmap/data/aus_centroids.Rda")
+save(sa2_hex, file = "data/sa2_hex.Rda")
+load("data/aus_centroids.Rda")
 
 ggplot(sa2_tidy) +
   geom_polygon(aes(x=long, y=lat, group=group),
