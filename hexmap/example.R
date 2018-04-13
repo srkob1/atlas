@@ -52,20 +52,26 @@ load("hexmap/data/aus_centroids.Rda")
 # Points and hexes: inspired by http://unconj.ca/blog/custom-hexbin-functions-with-ggplot.html
 # colour by population
 
+# geographical map
 (geomap <- ggplot(sa2_map) +
   geom_polygon(aes(x=long, y=lat, group=group, fill=population, label=SA2_NAME16))
   )
 
+# hex map coloured by population
 (hexmap_pop <-ggplot(aus_centroids) +
   geom_polygon(data= sa2_map,aes(x=long, y=lat, group=group, fill=population, label=SA2_NAME16))+
 geom_hex(aes(x = hex_long, y = hex_lat, fill = population, label=SA2_NAME16),
            stat = "identity", colour = NA, alpha = 0.75)
 )
 
-(hexmap_area <-ggplot(aus_centroids) +
-    geom_polygon(data= sa2_map,aes(x=long, y=lat, group=group, fill=population, label=SA2_NAME16))+
-    geom_hex(aes(x = hex_long, y = hex_lat, fill = population, label=SA2_NAME16),
-             stat = "identity", colour = NA, alpha = 0.75)
-)
-# Interactive plot code
+# # hex map coloured by AREASQKM16 of represented 
+# # STEFF SAYS: add the column AREASQKM16 to aus_centroids data set
+# (hexmap_area <-ggplot(aus_centroids) +
+#     geom_polygon(data= sa2_map,aes(x=long, y=lat, group=group, fill=population, label=SA2_NAME16))+
+#     geom_hex(aes(x = hex_long, y = hex_lat, fill = population, label=SA2_NAME16),
+#              stat = "identity", colour = NA, alpha = 0.75)
+# )
 
+
+# Interactive plot code
+plotly::ggplotly(hexmap_pop)
