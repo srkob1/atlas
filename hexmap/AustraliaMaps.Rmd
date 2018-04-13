@@ -8,7 +8,7 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
 
@@ -58,7 +58,12 @@ Map of Australian SA2 areas represented by hexagons, coloured by population.
   theme_map()
 )
 
+```
+
+Interactive plot, label contains the SA2 name for 2016
+
+```{r}
 library(plotly)
-ggplotly(ausHex)
+#ggplotly(ausHex)
 ```
 
