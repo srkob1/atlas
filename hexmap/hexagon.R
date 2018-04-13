@@ -42,7 +42,7 @@ assign_hexagons <- function(centroids, grid) {
     grid_nasgn <- grid %>% filter(!assigned)
 
     distance <- distVincentyEllipsoid(
-      c(olong, olat), grid_nasgn,
+      c(olong, olat), c(grid_nasgn$hex_long,grid_nasgn$hex_lat),
       a=6378249.145, b=6356514.86955, f=1/293.465)
     distance_df <- cbind(grid_nasgn, distance) %>%
       arrange(distance)
