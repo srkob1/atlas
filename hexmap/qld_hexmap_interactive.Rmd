@@ -28,7 +28,7 @@ load("data/sa2_hex.Rda")
 ```
  
 
-# Map coloured by Brisbane ("jumping frog" colour palette from ochRe package)
+# Interactive hexmap coloured by random number ("jumping frog" colour palette from ochRe package)
 
 ```{r fig.height=6, fig.width=4}
 library(ochRe)
