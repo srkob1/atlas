@@ -33,6 +33,7 @@ centroids <- centroids %>%
   mutate(name = sa2@data$SA2_NAME16,
          pop = sa2@data$population,
          area = sa2@data$AREASQKM16)
+save(centroids, file="data/sa2_centroids.Rda")
 
 # Find the functions to use
 source("hexagon.R")
@@ -65,7 +66,7 @@ grid.arrange(p1, p2, ncol=2)
 write_csv(sa2_hex, path = "data/sa2_hex.csv")
 # and as Rda
 save(sa2_hex, file = "data/sa2_hex.Rda")
-load("data/aus_centroids.Rda")
+load("data/sa2_hex.Rda")
 
 ggplot(sa2_tidy) +
   geom_polygon(aes(x=long, y=lat, group=group),
@@ -90,8 +91,11 @@ ggplot(sa2_tidy) +
   theme_map()
 
 sa2_hex <- sa2_hex %>%
-  left_join(select(sa2_tidy, SA2_NAME16, STE_NAME16, GCC_NAME16), by=c("name"="SA2_NAME16")) %>%
+  left_join(distinct(select(sa2_tidy, SA2_NAME16, STE_NAME16, GCC_NAME16)), by=c("name"="SA2_NAME16")) %>%
   rename(state=STE_NAME16, capitals=GCC_NAME16)
+# Save with the extra info
+write_csv(sa2_hex, path = "data/sa2_hex.csv")
+save(sa2_hex, file = "data/sa2_hex.Rda")
 
 ggplot(sa2_tidy) +
   geom_polygon(aes(x=long, y=lat, group=group),
