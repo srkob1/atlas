@@ -1,9 +1,11 @@
 # Function to create grid
 # Input is the 2x2 matrix defining bounding box
 # and the radius, which sets the binwidth for the grid
-create_grid <- function(bbox, radius) {
-  grid <- expand.grid(hex_long = seq(bbox[1,1],
-                                 bbox[1,2],
+create_grid <- function(bbox, radius, expand_long = 0.1) {
+  # FIX THIS
+  expand <- (bbox[1,2] - bbox[1,1])*expand_long
+  grid <- expand.grid(hex_long = seq(bbox[1,1] - expand,
+                                 bbox[1,2] + expand,
                                  radius),
                       hex_lat = seq(bbox[2,1],
                                    bbox[2,2],

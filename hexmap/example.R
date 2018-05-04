@@ -87,6 +87,7 @@ ggplot(sa2_tidy) +
 
 ggplot(sa2_tidy) +
   geom_polygon(aes(x=long, y=lat, group=group, fill=population)) +
+  scale_fill_gradient(low = "#d8c0a8", high = "#a86030") +
   theme_map()
 
 sa2_hex <- sa2_hex %>%
