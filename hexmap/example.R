@@ -102,7 +102,6 @@ ggplot(sa2_tidy) +
   geom_polygon(aes(x=long, y=lat, group=group),
                fill="white", colour="grey90") +
   geom_hex(data=sa2_hex, aes(x = hex_long, y = hex_lat,
-                             fill = STE_NAME16, label=name),
+                             fill = state, label=name),
            stat = "identity", colour=NA, alpha = 0.75) +
-  scale_fill_gradient(low = "#d8c0a8", high = "#a86030") +
   theme_map()
