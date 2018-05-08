@@ -27,6 +27,7 @@ load("data/sa2_tidy.Rda")
 load("data/sa2_hex.Rda")
 # Melanoma data
 melanoma_aus <- read_csv("data/melanoma_people_aus.csv")
+#setdiff(melanoma_aus$sa2name, sa2_hex$name)
 sa2_mel <- left_join(sa2_hex, melanoma_aus, by = c("name"= "sa2name"))
 ```
  
@@ -34,7 +35,11 @@ sa2_mel <- left_join(sa2_hex, melanoma_aus, by = c("name"= "sa2name"))
 Map of Australian SA2 areas represented by hexagons, coloured by National Cancer Atlas colours.
 
 ```{r fig.height=5, fig.width =8}
-nac_colours <- c("#ff3500", "#ff9a64", "#fff4bc", "#aec6c7", "#33809d")
+nac_colours <- c("A" = "#ff3500",
+                 "B" = "#ff9a64",
+                 "C" = "#fff4bc",
+                 "D" = "#aec6c7",
+                 "E" = "#33809d")
 sa2_colours <- sa2_mel %>% mutate(colrs = case_when(
       sir_p50 < 0.5  ~ "A",
       sir_p50 >= 0.5 & sir_p50 < 1  ~ "B",
@@ -57,9 +62,11 @@ p1 <- ggplot(sa2_tidy) +
 ```
 
 ```{r fig.height=11, fig.width=9}
-p2 <- ggplot(sa2_tidy %>% left_join(., sa2_colours, by = c("SA2_NAME16" = "name"))) +  geom_polygon(aes(x=long, y=lat, group=group,
+p2 <- ggplot(sa2_tidy %>% 
+               left_join(., sa2_colours, by = c("SA2_NAME16" = "name"))) + 
+  geom_polygon(aes(x=long, y=lat, group=group,
                fill=colrs)) +
-  scale_fill_manual(values = nac_colours)+
+  scale_fill_manual(values = nac_colours) +
   theme_map() + 
   guides(fill=FALSE)
 
