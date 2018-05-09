@@ -1,0 +1,76 @@
+---
+title: "Australia SA2 melanoma hexmaps 1"
+author: "Stephanie Kobakian and Di Cook"
+date: "5/8/2018"
+output: pdf_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, 
+                      message=FALSE, 
+                      error=FALSE, 
+                      warning = FALSE)
+```
+
+
+```{r}
+# Load libraries and data sets
+library(tidyverse)
+library(ggthemes)
+library(gridExtra)
+library(plotly)
+# Tidy format spatial polygons, for easy plotting
+load("data/sa2_tidy.Rda")
+# Hex gridded sa2 regions
+load("data/sa2_hex.Rda")
+# Melanoma data
+melanoma_aus <- read_csv("data/melanoma_people_aus.csv")
+#setdiff(melanoma_aus$sa2name, sa2_hex$name)
+sa2_mel <- left_join(sa2_hex, melanoma_aus, by = c("name"= "sa2name"))
+```
+ 
+
+Map of Australian SA2 areas represented by hexagons, coloured by National Cancer Atlas colours.
+
+```{r fig.height=5, fig.width =8}
+nac_colours <- c("A" = "#ff3500",
+                 "B" = "#ff9a64",
+                 "C" = "#fff4bc",
+                 "D" = "#aec6c7",
+                 "E" = "#33809d")
+sa2_colours <- sa2_mel %>% mutate(colrs = case_when(
+      sir_p50 < 0.5  ~ "A",
+      sir_p50 >= 0.5 & sir_p50 < 1  ~ "B",
+      sir_p50 >= 1 & sir_p50 < 1.5  ~ "C",
+      sir_p50 >= 1.5 & sir_p50 < 2  ~ "D",
+      sir_p50 > 2  ~ "E")) %>% select(name, colrs)
+```
+
+```{r}
+p1 <- ggplot(sa2_tidy) +
+  geom_polygon(aes(x=long, y=lat, group=group),
+               fill="white", colour="grey90") +
+  geom_hex(data=sa2_mel %>% left_join(., sa2_colours),
+           aes(x = hex_long, y = hex_lat,
+               fill = colrs, label = name),
+         stat = "identity") +
+  scale_fill_manual(values = nac_colours)+
+  theme_map() + 
+  guides(fill=FALSE)
+```
+
+```{r fig.height=11, fig.width=9}
+p2 <- ggplot(sa2_tidy %>% 
+               left_join(., sa2_colours, by = c("SA2_NAME16" = "name"))) + 
+  geom_polygon(aes(x=long, y=lat, group=group,
+               fill=colrs)) +
+  scale_fill_manual(values = nac_colours) +
+  theme_map() + 
+  guides(fill=FALSE)
+
+grid.arrange(p1,p2,nrow=2)
+
+#ggplotly(p1)
+```
