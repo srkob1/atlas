@@ -1,0 +1,96 @@
+---
+title: "Australia SA2 choropleth hexmaps 1"
+author: "Stephanie Kobakian and Di Cook"
+date: "4/13/2018"
+output: pdf_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, 
+                      message=FALSE, 
+                      error=FALSE, 
+                      warning = FALSE)
+```
+
+
+```{r}
+# Load libraries and data sets
+library(tidyverse)
+library(ggthemes)
+library(gridExtra)
+library(plotly)
+# Tidy format spatial polygons, for easy plotting
+load("data/sa2_tidy11.Rda")
+# Hex gridded sa2 regions
+load("data/sa2_hex11.Rda")
+```
+ 
+
+Map of Australian SA2 areas represented by hexagons, coloured by population ("jumping frog" colour palette from ochRe package).
+
+```{r}
+p1 <- ggplot(sa2_tidy) +
+  geom_polygon(aes(x=long, y=lat, group=group),
+               fill="white", colour="grey90") +
+  geom_hex(data=sa2_hex, aes(x = hex_long, y = hex_lat,
+                             fill = pop, label=name),
+         stat = "identity", colour = NA, alpha = 0.75) +
+  scale_fill_gradient("Population", low = "#184848", high = "#c0c030") +
+  theme_map()
+p1
+#ggplotly(p1)
+```
+
+
+# Map coloured by a random number ("jumping frog" colour palette from ochRe package)
+
+```{r fig.height=12, fig.width=8}
+library(ochRe)
+
+sa2_hex <- sa2_hex %>% mutate(rnorm=rnorm(n = nrow(sa2_hex)))
+sa2_tidy <- sa2_tidy %>% left_join(select(sa2_hex, name, rnorm), by=c("SA2_NAME11"="name"))
+
+p2 <- ggplot(sa2_tidy) +
+  geom_polygon(aes(x=long, y=lat, group=group),
+               fill="white", colour="grey90") +
+  geom_hex(data=sa2_hex, aes(x = hex_long, y = hex_lat,
+                             fill = rnorm),
+         stat = "identity", colour = NA, alpha = 0.75) +
+  scale_fill_gradient("rnorm", low = "#184848", high = "#c0c030") +
+  theme_map()
+p3 <- ggplot(sa2_tidy) +
+  geom_polygon(aes(x=long, y=lat, group=group, fill = rnorm),
+               colour=NA) +
+  scale_fill_gradient("rnorm", low = "#184848", high = "#c0c030") +
+  theme_map() + theme(legend.position="none")
+grid.arrange(p2, p3, nrow=2)
+#ggplotly(p2)
+```
+
+
+
+# Map coloured by chi-square random numbers ("jumping frog" colour palette from ochRe package)
+
+```{r fig.height=12, fig.width=8}
+
+sa2_hex <- sa2_hex %>% mutate(rchisq=rchisq(n = nrow(sa2_hex), df = 10))
+sa2_tidy <- sa2_tidy %>% left_join(select(sa2_hex, name, rchisq), by=c("SA2_NAME11"="name"))
+
+p4 <- ggplot(sa2_tidy) +
+  geom_polygon(aes(x=long, y=lat, group=group),
+               fill="white", colour="grey90") +
+  geom_hex(data=sa2_hex, aes(x = hex_long, y = hex_lat,
+                             fill = rchisq),
+         stat = "identity", colour = NA, alpha = 0.75) +
+  scale_fill_gradient("rchisq", low = "#184848", high = "#c0c030") +
+  theme_map()
+p5 <- ggplot(sa2_tidy) +
+  geom_polygon(aes(x=long, y=lat, group=group, fill = rchisq),
+               colour=NA) +
+  scale_fill_gradient("rchisq", low = "#184848", high = "#c0c030") +
+  theme_map() + theme(legend.position="none")
+grid.arrange(p4, p5,nrow=2)
+#ggplotly(p4)
+```

@@ -6,16 +6,9 @@ library(hexbin)
 library(gridExtra)
 library(ggthemes)
 library(plotly)
+library(geosphere)
 
-# Download and simplify sa2 2011 shape file
-# library(sf)
-# library(rgdal)
-# library(rmapshaper)
-# SAtwo = readOGR(dsn="data/SA2_2011_AUST", layer="SA2_2011_AUST")
-# SAtwo@data$id = rownames(SAtwo@data)
-# sa2 <- rmapshaper::ms_simplify(SAtwo, keep=0.05)
-# 
-# Add population v
+# source(sa2_tidy.R)
 
 load("data/sa2_2011.Rda")
 load("data/sa2_tidy11.Rda")
@@ -30,19 +23,11 @@ sa2_tidy <- sa2_tidy %>%
   filter(STE_NAME11!="Other Territories") %>%
   filter(SA2_NAME11!="Lord Howe Island")
 
-# Arrange original centroid data
-# Create a data frame containing long, lat
-library(maptools)
-get_centroid <- function(i, polys) {
-  ctr <- polys[[i]]@labpt
-  id <- polys[[i]]@ID
-  data.frame(long=ctr[1], lat=ctr[2], id=id)
-}
-centroids <- seq_along(sa2@polygons) %>% purrr::map_df(get_centroid, polys=sa2@polygons)
-centroids <- centroids %>%
-  mutate(name = sa2@data$SA2_NAME11)
-
-#save(centroids, file="data/sa2_centroids11.Rda")
+centroids <- sa2@data %>%
+  mutate(name = SA2_NAME11,
+         pop = population,
+         long = long_c,
+         lat = lat_c)
 
 # Find the functions to use
 source("hexagon.R")
@@ -57,9 +42,11 @@ grid <- grid %>% mutate(id=1:nrow(grid), assigned=FALSE)
 
 # Mapping SA2 to closest hexagon grid, in order of population,
 # and then distance
-sa2_hex <- centroids %>%
-  arrange(desc(pop)) %>%
-  assign_hexagons(., grid)
+# sa2_hex <- centroids %>%
+#   arrange(desc(pop)) %>%
+#   assign_hexagons(., grid)
+
+load("data/sa2_hex11.Rda")
 
 # Checks
 ggplot(sa2_hex, aes(x=hex_long, y=hex_lat, colour=name)) + geom_point() + geom_point(aes(x=long, y=lat), shape=2)
