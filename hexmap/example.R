@@ -14,6 +14,8 @@ library(plotly)
 # SAtwo = readOGR(dsn="data/SA2_2011_AUST", layer="SA2_2011_AUST")
 # SAtwo@data$id = rownames(SAtwo@data)
 # sa2 <- rmapshaper::ms_simplify(SAtwo, keep=0.05)
+# 
+# Add population v
 
 load("data/sa2_2011.Rda")
 load("data/sa2_tidy11.Rda")
@@ -24,7 +26,7 @@ load("data/sa2_tidy11.Rda")
 sa2 <- subset(sa2, (STE_NAME11 != "Other Territories"))
 sa2 <- subset(sa2, (SA2_NAME11 != "Lord Howe Island"))
 
-sa2_tidy <- sa2_tidy11 %>%
+sa2_tidy <- sa2_tidy %>%
   filter(STE_NAME11!="Other Territories") %>%
   filter(SA2_NAME11!="Lord Howe Island")
 
@@ -38,17 +40,15 @@ get_centroid <- function(i, polys) {
 }
 centroids <- seq_along(sa2@polygons) %>% purrr::map_df(get_centroid, polys=sa2@polygons)
 centroids <- centroids %>%
-  mutate(name = sa2@data$SA2_NAME11,
-         pop = sa2@data$population #,
-         # area = sa2@data$AREASQKM11
-         )
-#save(centroids, file="data/sa2_centroids.Rda")
+  mutate(name = sa2@data$SA2_NAME11)
+
+#save(centroids, file="data/sa2_centroids11.Rda")
 
 # Find the functions to use
 source("hexagon.R")
 
 # Set radius for hexagons to layout a reasonable grid for the country
-# DI SAYS: Code to get some estimate on this is in XXX
+# This is chosen arbitrarily, depending on the desired amount of geographical space each hex is allocated
 radius <- 0.3
 
 # Create hexagon grid
