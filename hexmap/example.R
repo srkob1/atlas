@@ -7,7 +7,15 @@ library(gridExtra)
 library(ggthemes)
 library(plotly)
 
-load("data/sa2.Rda")
+# Download sa2 2011 shape file
+library(sf)
+library(rgdal)
+library(rmapshaper)
+SAtwo = readOGR(dsn="./data/SA2_2011_AUST", layer="SA2_2011_AUST")
+SAtwo@data$id = rownames(SAtwo@data)
+sa2 <- rmapshaper::ms_simplify(SAtwo, keep=0.05)
+#load("data/sa2.Rda")
+
 load("data/sa2_tidy.Rda")
 
 # Remove islands because we think they are not used in the atlas
