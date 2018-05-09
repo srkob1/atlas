@@ -7,26 +7,26 @@ library(gridExtra)
 library(ggthemes)
 library(plotly)
 
-# Download sa2 2011 shape file
-library(sf)
-library(rgdal)
-library(rmapshaper)
-SAtwo = readOGR(dsn="./data/SA2_2011_AUST", layer="SA2_2011_AUST")
-SAtwo@data$id = rownames(SAtwo@data)
-sa2 <- rmapshaper::ms_simplify(SAtwo, keep=0.05)
-#load("data/sa2.Rda")
+# Download and simplify sa2 2011 shape file
+# library(sf)
+# library(rgdal)
+# library(rmapshaper)
+# SAtwo = readOGR(dsn="data/SA2_2011_AUST", layer="SA2_2011_AUST")
+# SAtwo@data$id = rownames(SAtwo@data)
+# sa2 <- rmapshaper::ms_simplify(SAtwo, keep=0.05)
 
-load("data/sa2_tidy.Rda")
+load("data/sa2_2011.Rda")
+load("data/sa2_tidy11.Rda")
 
 # Remove islands because we think they are not used in the atlas
 # If they are, we simply need to shift them closer to the mainland
 # to automatically lay out
-sa2 <- subset(sa2, (STE_NAME16 != "Other Territories"))
-sa2 <- subset(sa2, (SA2_NAME16 != "Lord Howe Island"))
+sa2 <- subset(sa2, (STE_NAME11 != "Other Territories"))
+sa2 <- subset(sa2, (SA2_NAME11 != "Lord Howe Island"))
 
-sa2_tidy <- sa2_tidy %>%
-  filter(STE_NAME16!="Other Territories") %>%
-  filter(SA2_NAME16!="Lord Howe Island")
+sa2_tidy <- sa2_tidy11 %>%
+  filter(STE_NAME11!="Other Territories") %>%
+  filter(SA2_NAME11!="Lord Howe Island")
 
 # Arrange original centroid data
 # Create a data frame containing long, lat
@@ -38,10 +38,11 @@ get_centroid <- function(i, polys) {
 }
 centroids <- seq_along(sa2@polygons) %>% purrr::map_df(get_centroid, polys=sa2@polygons)
 centroids <- centroids %>%
-  mutate(name = sa2@data$SA2_NAME16,
-         pop = sa2@data$population,
-         area = sa2@data$AREASQKM16)
-save(centroids, file="data/sa2_centroids.Rda")
+  mutate(name = sa2@data$SA2_NAME11,
+         pop = sa2@data$population #,
+         # area = sa2@data$AREASQKM11
+         )
+#save(centroids, file="data/sa2_centroids.Rda")
 
 # Find the functions to use
 source("hexagon.R")
@@ -100,8 +101,8 @@ ggplot(sa2_tidy) +
   theme_map()
 
 sa2_hex <- sa2_hex %>%
-  left_join(distinct(select(sa2_tidy, SA2_NAME16, STE_NAME16, GCC_NAME16)), by=c("name"="SA2_NAME16")) %>%
-  rename(state=STE_NAME16, capitals=GCC_NAME16)
+  left_join(distinct(select(sa2_tidy, SA2_NAME11, STE_NAME11, GCC_NAME11)), by=c("name"="SA2_NAME11")) %>%
+  rename(state=STE_NAME11, capitals=GCC_NAME11)
 # Save with the extra info
 write_csv(sa2_hex, path = "data/sa2_hex.csv")
 save(sa2_hex, file = "data/sa2_hex.Rda")
