@@ -3,7 +3,7 @@
 .RData
 .Ruserdata
 atlas.Rproj
-.DS_Store
+*.DS_Store
 data/SA2_2016_AUST
 data/simulations
 data/region
