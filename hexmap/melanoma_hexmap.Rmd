@@ -37,11 +37,11 @@ sa2_mel <- left_join(sa2_hex, melanoma_aus, by = c("name"= "sa2name"))
 Map of Australian SA2 areas represented by hexagons, coloured by National Cancer Atlas colours.
 
 ```{r fig.height=5, fig.width =8}
-nac_colours <- c("A" = "#ff3500",
-                 "B" = "#ff9a64",
+nac_colours <- c("A" = "#33809d",
+                 "B" = "#aec6c7",
                  "C" = "#fff4bc",
-                 "D" = "#aec6c7",
-                 "E" = "#33809d")
+                 "D" = "#ff9a64",
+                 "E" = "#ff3500")
 sa2_colours <- sa2_mel %>% mutate(colrs = case_when(
       sir_p50 < 0.5  ~ "A",
       sir_p50 >= 0.5 & sir_p50 < 1  ~ "B",
