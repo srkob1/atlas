@@ -21,6 +21,8 @@ library(tidyverse)
 library(ggthemes)
 library(gridExtra)
 library(plotly)
+library(ggpolypath)
+
 # Tidy format spatial polygons, for easy plotting
 load("data/sa2_tidy11.Rda")
 # Hex gridded sa2 regions
@@ -32,7 +34,7 @@ Map of Australian SA2 areas represented by hexagons, coloured by population ("ju
 
 ```{r}
 p1 <- ggplot(sa2_tidy) +
-  geom_polygon(aes(x=long, y=lat, group=group),
+  geom_polypath(aes(x=long, y=lat, group=group),
                fill="white", colour="grey90") +
   geom_hex(data=sa2_hex, aes(x = hex_long, y = hex_lat,
                              fill = pop, label=name),
@@ -53,7 +55,7 @@ sa2_hex <- sa2_hex %>% mutate(rnorm=rnorm(n = nrow(sa2_hex)))
 sa2_tidy <- sa2_tidy %>% left_join(select(sa2_hex, name, rnorm), by=c("SA2_NAME11"="name"))
 
 p2 <- ggplot(sa2_tidy) +
-  geom_polygon(aes(x=long, y=lat, group=group),
+  geom_polypath(aes(x=long, y=lat, group=group),
                fill="white", colour="grey90") +
   geom_hex(data=sa2_hex, aes(x = hex_long, y = hex_lat,
                              fill = rnorm),
@@ -61,7 +63,7 @@ p2 <- ggplot(sa2_tidy) +
   scale_fill_gradient("rnorm", low = "#184848", high = "#c0c030") +
   theme_map()
 p3 <- ggplot(sa2_tidy) +
-  geom_polygon(aes(x=long, y=lat, group=group, fill = rnorm),
+  geom_polypath(aes(x=long, y=lat, group=group, fill = rnorm),
                colour=NA) +
   scale_fill_gradient("rnorm", low = "#184848", high = "#c0c030") +
   theme_map() + theme(legend.position="none")
@@ -79,7 +81,7 @@ sa2_hex <- sa2_hex %>% mutate(rchisq=rchisq(n = nrow(sa2_hex), df = 10))
 sa2_tidy <- sa2_tidy %>% left_join(select(sa2_hex, name, rchisq), by=c("SA2_NAME11"="name"))
 
 p4 <- ggplot(sa2_tidy) +
-  geom_polygon(aes(x=long, y=lat, group=group),
+  geom_polypath(aes(x=long, y=lat, group=group),
                fill="white", colour="grey90") +
   geom_hex(data=sa2_hex, aes(x = hex_long, y = hex_lat,
                              fill = rchisq),
@@ -87,7 +89,7 @@ p4 <- ggplot(sa2_tidy) +
   scale_fill_gradient("rchisq", low = "#184848", high = "#c0c030") +
   theme_map()
 p5 <- ggplot(sa2_tidy) +
-  geom_polygon(aes(x=long, y=lat, group=group, fill = rchisq),
+  geom_polypath(aes(x=long, y=lat, group=group, fill = rchisq),
                colour=NA) +
   scale_fill_gradient("rchisq", low = "#184848", high = "#c0c030") +
   theme_map() + theme(legend.position="none")

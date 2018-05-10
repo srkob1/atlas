@@ -21,6 +21,8 @@ library(tidyverse)
 library(ggthemes)
 library(gridExtra)
 library(plotly)
+library(ggpolypath)
+
 # Tidy format spatial polygons, for easy plotting
 load("data/sa2_tidy.Rda")
 # Hex gridded sa2 regions
@@ -50,7 +52,7 @@ sa2_colours <- sa2_mel %>% mutate(colrs = case_when(
 
 ```{r}
 p1 <- ggplot(sa2_tidy) +
-  geom_polygon(aes(x=long, y=lat, group=group),
+  geom_polypath(aes(x=long, y=lat, group=group),
                fill="white", colour="grey90") +
   geom_hex(data=sa2_mel %>% left_join(., sa2_colours),
            aes(x = hex_long, y = hex_lat,
@@ -64,7 +66,7 @@ p1 <- ggplot(sa2_tidy) +
 ```{r fig.height=11, fig.width=9}
 p2 <- ggplot(sa2_tidy %>% 
                left_join(., sa2_colours, by = c("SA2_NAME16" = "name"))) + 
-  geom_polygon(aes(x=long, y=lat, group=group,
+  geom_polypath(aes(x=long, y=lat, group=group,
                fill=colrs)) +
   scale_fill_manual(values = nac_colours) +
   theme_map() + 
