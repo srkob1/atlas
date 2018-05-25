@@ -1,0 +1,104 @@
+---
+title: "Australia SA2 melanoma test"
+author: "Stephanie Kobakian and Di Cook"
+date: "5/8/2018"
+output: pdf_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, 
+                      message=FALSE, 
+                      error=FALSE, 
+                      warning = FALSE)
+```
+
+
+```{r}
+# Load libraries and data sets
+library(tidyverse)
+library(ggpolypath)
+library(ggthemes)
+library(gridExtra)
+library(plotly)
+# Tidy format spatial polygons, for easy plotting
+load("data/sa2_tidy11.Rda")
+# Hex gridded sa2 regions
+load("data/sa2_hex11.Rda")
+# Melanoma data not available on github
+melanoma_aus <- read_csv("data/melanoma_people_aus.csv")
+#setdiff(melanoma_aus$sa2name, sa2_hex$name)
+sa2_mel <- left_join(sa2_hex, melanoma_aus, by = c("name"= "sa2name"))
+```
+ 
+
+Map of Australian SA2 areas represented by hexagons, coloured by National Cancer Atlas colours.
+
+```{r}
+nac_colours <- c("A" = "#33809d",
+                 "B" = "#aec6c7",
+                 "C" = "#fff4bc",
+                 "D" = "#ff9a64",
+                 "E" = "#ff3500")
+sa2_colours <- sa2_mel %>% mutate(colrs = case_when(
+      sir_p50 < 0.5  ~ "A",
+      sir_p50 >= 0.5 & sir_p50 < 1  ~ "B",
+      sir_p50 >= 1 & sir_p50 < 1.5  ~ "C",
+      sir_p50 >= 1.5 & sir_p50 < 2  ~ "D",
+      sir_p50 > 2  ~ "E")) %>% 
+  mutate(s1 = base::sample(colrs, replace=T),
+         s2 = base::sample(colrs, replace=T),
+         s3 = base::sample(colrs, replace=T)) %>%
+  select(SA2_NAME11, colrs, s1,s2,s3)
+```
+
+```{r, dpi=500, dev="png"}
+hex_data <- sa2_mel %>% left_join(., sa2_colours)
+
+hexbase <- ggplot(sa2_tidy) +
+  geom_polypath(aes(x=long, y=lat, group=group),
+               fill="white", colour="grey90") +
+    scale_fill_manual(values = nac_colours)+
+  theme_map() + 
+  guides(fill=FALSE)
+
+h1 <- hexbase + geom_hex(data=hex_data,
+           aes(x = hex_long, y = hex_lat,
+               fill = s1, label = name),
+         stat = "identity")
+h2 <- hexbase + geom_hex(data=hex_data,
+           aes(x = hex_long, y = hex_lat,
+               fill = colrs, label = name),
+         stat = "identity")
+h3 <- hexbase + geom_hex(data=hex_data,
+           aes(x = hex_long, y = hex_lat,
+               fill = s2, label = name),
+         stat = "identity")
+h4 <- hexbase + geom_hex(data=hex_data,
+           aes(x = hex_long, y = hex_lat,
+               fill = s3, label = name),
+         stat = "identity")
+
+grid.arrange(h1,h2, h3,h4,nrow=2)
+```
+
+```{r, dpi=300, dev="png"}
+map_data <- sa2_tidy %>% left_join(., sa2_colours, by = c("SA2_NAME11"))
+                         
+mapbase <- ggplot(map_data) +
+  scale_fill_manual(values = nac_colours) +
+  theme_map() + 
+  guides(fill=FALSE)
+
+m1 <- mapbase + geom_polygon(data=map_data,
+                                aes(x=long, y=lat, group=group, fill= s1))
+m2 <- mapbase + geom_polygon(data=map_data,
+                                aes(x=long, y=lat, group=group, fill= s2))
+m3 <- mapbase + geom_polygon(data=map_data,
+                                aes(x=long, y=lat, group=group, fill= colrs))
+m4 <- mapbase + geom_polygon(data=map_data,
+                                aes(x=long, y=lat, group=group, fill= s3))
+
+grid.arrange(m1,m2, m3,m4,nrow=2)
+```
