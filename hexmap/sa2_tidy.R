@@ -27,10 +27,18 @@ sa2@data <- full_join(sa2@data, centroids)
 # Add population 
 ABS_ANNUAL_ERP <- read_csv("data/ABS_ANNUAL_ERP.csv")
 
-ABS_ANNUAL_ERP %>% filter(REGIONTYPE=="SA2") %>%
- select(SA2_NAME11 = Region, population = Value) -> SA2population
+SA2population <- ABS_ANNUAL_ERP %>% filter(REGIONTYPE=="SA2") %>%
+ dplyr::select(SA2_NAME11 = Region, population = Value)
 
 sa2@data <- left_join(sa2@data, SA2population)
+
+# Add Significant Urban Area
+SUA <- read_csv("data/SA2_SUA_2011_AUST.csv") %>%
+  dplyr::select(SA2_NAME_2011, SUA_NAME_2011)
+
+sa2@data <- left_join(sa2@data, SUA, 
+                      by = c("SA2_NAME11" = "SA2_NAME_2011"))
+
 
 # Join data with points
 sa2.points <- fortify(sa2, region="id")
