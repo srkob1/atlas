@@ -54,9 +54,6 @@ sa2_mel <- sa2_mel %>%
          s2 = base::sample(colrs, replace=T),
          s3 = base::sample(colrs, replace=T))
 
-# data for mapping
-map_data <- left_join(sa2_tidy, 
-                      dplyr::select(sa2_mel, SA2_NAME11, hex_long:s3), by = c("SA2_NAME11"))
 
 # group data for mapping
 sa2_grouped <- split(sa2_mel, sa2_mel$SUA_NAME_2011)
@@ -67,6 +64,9 @@ sa2_grouped <-  plyr::ldply(sa2_grouped, function(x) {
                                     g_s3 = sample(colrs))
   })
 
+# data for mapping
+map_data <- left_join(sa2_tidy, 
+                      dplyr::select(sa2_grouped, SA2_NAME11, hex_long:g_s3), by = c("SA2_NAME11"))
 ```
  
 
