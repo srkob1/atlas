@@ -23,11 +23,31 @@ sa2_tidy <- sa2_tidy %>%
   filter(STE_NAME11!="Other Territories") %>%
   filter(SA2_NAME11!="Lord Howe Island")
 
+
 centroids <- sa2@data %>%
   mutate(name = SA2_NAME11,
          pop = population,
          long = long_c,
-         lat = lat_c)
+         lat = lat_c,
+         SUA = case_when(SUA_NAME_2011 == "Not in any Significant Urban Area (NT)"
+                                                     ~ "Not in any Significant Urban Area",
+                         SUA_NAME_2011 == "Not in any Significant Urban Area (NSW)"
+                                                     ~ "Not in any Significant Urban Area",
+                         SUA_NAME_2011 == "Not in any Significant Urban Area (Qld)"
+                                                     ~ "Not in any Significant Urban Area",
+                         SUA_NAME_2011 == "Not in any Significant Urban Area (Vic.)"
+                                                     ~ "Not in any Significant Urban Area",
+                         SUA_NAME_2011 == "Not in any Significant Urban Area (WA)"
+                                                     ~ "Not in any Significant Urban Area",
+                         SUA_NAME_2011 == "Not in any Significant Urban Area (SA)"
+                                                     ~ "Not in any Significant Urban Area",
+                         SUA_NAME_2011 == "Not in any Significant Urban Area (Tas.)"
+                                                     ~ "Not in any Significant Urban Area",
+                         SUA_NAME_2011 == "Not in any Significant Urban Area (ACT)"
+                                                     ~ "Not in any Significant Urban Area",
+                         SUA_NAME_2011 == "Not in any Significant Urban Area (OT)"
+                                                     ~ "Not in any Significant Urban Area",
+                                                     TRUE ~ as.character(SUA_NAME_2011)))
 
 # Find the functions to use
 source("hexagon.R")
