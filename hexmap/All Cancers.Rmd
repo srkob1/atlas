@@ -1,0 +1,250 @@
+---
+title: "All cancers"
+author: "Stephanie Kobakian and Di Cook"
+date: "5/8/2018"
+output: pdf_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, 
+                      message=FALSE, 
+                      error=FALSE, 
+                      warning = FALSE, cache=FALSE,
+                      fig.height = 4,
+                      fig.width = 6, fig.align = "centre", dpi=300)
+```
+
+
+
+```{r}
+# Load libraries and data sets
+library(tidyverse)
+library(ggthemes)
+library(gridExtra)
+library(ggpolypath)
+
+# Tidy format spatial polypaths, for easy plotting
+load("data/sa2_tidy11.Rda")
+# Hex gridded sa2 regions
+load("data/sa2_hex11.Rda")
+# Cancer SIR data
+cancer_aus <- read_csv("data/SIR_all_test.csv") %>% mutate(SA2_5DIG11 = as.factor(sa2))
+
+sa2_canc <- left_join(sa2_hex, cancer_aus)
+```
+ 
+
+Map of Australian SA2 areas represented by hexagons, coloured by National Cancer Atlas colours.
+Data provided by Susanna Cramb and Thom Saunders.
+
+
+```{r}
+nac_colours <- c("A" = "#33809d",
+                 "B" = "#aec6c7",
+                 "C" = "#fff4bc",
+                 "D" = "#ff9a64",
+                 "E" = "#ff3500")
+sa2_colours <- sa2_canc %>% mutate(colrs = case_when(
+      sir_p50 < 0.5  ~ "A",
+      sir_p50 >= 0.5 & sir_p50 < 1  ~ "B",
+      sir_p50 >= 1 & sir_p50 < 1.5  ~ "C",
+      sir_p50 >= 1.5 & sir_p50 < 2  ~ "D",
+      sir_p50 > 2  ~ "E")) %>% dplyr::select(name, cancergrpname,sexname, colrs)
+```
+
+
+```{r}
+plotdata <- function(cancer_data, sat, sah, sexname = "Persons") {
+  # browser()
+  cd <- left_join(cancer_data , filter(sa2_colours, sexname==sexname))
+  
+ggplot() +
+  geom_polypath(data=sat, aes(x=long, y=lat, group=group),
+               fill="white", colour="grey90") +
+  geom_hex(data=cd,
+           aes(x = hex_long, y = hex_lat,
+               fill = colrs),
+           colour = NA, stat = "identity") +
+  scale_fill_manual(values = nac_colours) +
+  theme_map() + 
+  guides(fill=FALSE)
+}
+```
+
+# Cancers
+Oesophageal cancer
+
+```{r}
+oc <- sa2_canc %>% filter(cancergrpname == "Oesophageal cancer") %>% filter(sexname=="Persons")
+
+plotdata(cancer_data = oc,
+         sat = sa2_tidy,
+         sah = sa2_hex)
+```
+
+```{r}
+sc <- sa2_canc %>% filter(cancergrpname == "Stomach cancer") %>% filter(sexname=="Persons")
+
+plotdata(cancer_data = sc,
+         sat = sa2_tidy,
+         sah = sa2_hex)
+```
+
+```{r}
+bc <- sa2_canc %>% filter(cancergrpname == "Bowel cancer") %>% filter(sexname=="Persons")
+
+plotdata(cancer_data = bc,
+         sat = sa2_tidy,
+         sah = sa2_hex)
+```
+
+```{r}
+lc <- sa2_canc %>% filter(cancergrpname == "Liver cancer") %>% filter(sexname=="Persons")
+
+plotdata(cancer_data = lc,
+         sat = sa2_tidy,
+         sah = sa2_hex)
+```
+
+
+```{r}
+pc <- sa2_canc %>% filter(cancergrpname == "Pancreatic cancer") %>% filter(sexname=="Persons")
+
+plotdata(cancer_data = pc,
+         sat = sa2_tidy,
+         sah = sa2_hex,sexname="Persons")
+```
+
+```{r}
+lc <- sa2_canc %>% filter(cancergrpname == "Lung cancer") %>% filter(sexname=="Persons")
+
+plotdata(cancer_data = lc,
+         sat = sa2_tidy,
+         sah = sa2_hex)
+```
+
+```{r}
+m <- sa2_canc %>% filter(cancergrpname == "Melanoma") %>% filter(sexname=="Persons")
+
+plotdata(cancer_data =  m,
+         sat = sa2_tidy,
+         sah = sa2_hex)
+```
+
+```{r}
+bc <- sa2_canc %>% filter(cancergrpname == "Breast cancer") %>% filter(sexname=="Females")
+
+plotdata(cancer_data =  bc,
+         sat = sa2_tidy,
+         sah = sa2_hex,
+         sexname = "Females")
+```
+
+```{r}
+cc <- sa2_canc %>% filter(cancergrpname == "Cervical cancer") %>% filter(sexname=="Females")
+
+plotdata(cancer_data =  cc,
+         sat = sa2_tidy,
+         sah = sa2_hex,
+         sexname = "Females")
+```
+
+```{r}
+uc <- sa2_canc %>% filter(cancergrpname == "Uterine cancer") %>% filter(sexname=="Females")
+
+plotdata(cancer_data =  cc,
+         sat = sa2_tidy,
+         sah = sa2_hex,
+         sexname = "Females")
+```
+
+```{r}
+oc <- sa2_canc %>% filter(cancergrpname == "Ovarian cancer") %>% filter(sexname=="Females")
+
+plotdata(cancer_data =  cc,
+         sat = sa2_tidy,
+         sah = sa2_hex,
+         sexname = "Females")
+```
+
+```{r}
+pc <- sa2_canc %>% filter(cancergrpname == "Prostate cancer") %>% filter(sexname=="Males")
+
+plotdata(cancer_data =  pc,
+         sat = sa2_tidy,
+         sah = sa2_hex,
+         sexname = "Males")
+```
+
+
+```{r}
+kc <- sa2_canc %>% filter(cancergrpname == "Kidney cancer") %>% filter(sexname=="Persons")
+
+plotdata(cancer_data =  kc,
+         sat = sa2_tidy,
+         sah = sa2_hex)
+```
+
+
+```{r}
+bc <- sa2_canc %>% filter(cancergrpname == "Brain cancer") %>% filter(sexname=="Persons")
+
+plotdata(cancer_data =  bc,
+         sat = sa2_tidy,
+         sah = sa2_hex)
+```
+
+
+```{r}
+tc <- sa2_canc %>% filter(cancergrpname == "Thyroid cancer") %>% filter(sexname=="Persons")
+
+plotdata(cancer_data =  tc,
+         sat = sa2_tidy,
+         sah = sa2_hex)
+```
+
+
+```{r}
+nh <- sa2_canc %>% filter(cancergrpname == "Non-Hodgkin lymphoma") %>% filter(sexname=="Persons")
+
+plotdata(cancer_data =  nh,
+         sat = sa2_tidy,
+         sah = sa2_hex)
+```
+
+
+```{r}
+lk <- sa2_canc %>% filter(cancergrpname == "Leukaemia") %>% filter(sexname=="Persons")
+
+plotdata(cancer_data =  lk,
+         sat = sa2_tidy,
+         sah = sa2_hex)
+```
+
+```{r}
+my <- sa2_canc %>% filter(cancergrpname == "Myeloma") %>% filter(sexname=="Persons")
+
+plotdata(cancer_data = my,
+         sat = sa2_tidy,
+         sah = sa2_hex)
+```
+
+
+```{r}
+ac <- sa2_canc %>% filter(cancergrpname == "All cancers") %>% filter(sexname=="Persons")
+
+plotdata(cancer_data = ac,
+         sat = sa2_tidy,
+         sah = sa2_hex)
+```
+
+
+```{r}
+ac <- sa2_canc %>% filter(cancergrpname == "Head and neck cancers") %>% filter(sexname=="Persons")
+
+plotdata(cancer_data = ac,
+         sat = sa2_tidy,
+         sah = sa2_hex)
+```
