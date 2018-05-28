@@ -1,0 +1,150 @@
+---
+title: "Experiment Factor 2"
+author: "Stephanie Kobakian and Di Cook"
+date: "5/8/2018"
+output: pdf_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, 
+                      message=FALSE, 
+                      error=FALSE, 
+                      warning = FALSE)
+```
+
+# Distribution of Incidence Values
+
+## Actual Data 
+
+```{r}
+# Load libraries and data sets
+library(tidyverse)
+library(ggthemes)
+library(gridExtra)
+library(ggpolypath)
+
+# Tidy format spatial polypaths, for easy plotting
+load("data/sa2_tidy11.Rda")
+# Hex gridded sa2 regions
+load("data/sa2_hex11.Rda")
+# Melanoma data
+melanoma_aus <- read_csv("data/melanoma_people_aus.csv")
+#setdiff(melanoma_aus$sa2name, sa2_hex$name)
+sa2_mel <- left_join(sa2_hex, melanoma_aus, by = c("name"= "sa2name"))
+```
+ 
+
+Map of Australian SA2 areas represented by hexagons, coloured by National Cancer Atlas colours.
+Data provided by Susanna Cramb and Thom Saunders.
+
+
+```{r fig.height=5, fig.width =8}
+nac_colours <- c("A" = "#33809d",
+                 "B" = "#aec6c7",
+                 "C" = "#fff4bc",
+                 "D" = "#ff9a64",
+                 "E" = "#ff3500")
+sa2_colours <- sa2_mel %>% mutate(colrs = case_when(
+      sir_p50 < 0.5  ~ "A",
+      sir_p50 >= 0.5 & sir_p50 < 1  ~ "B",
+      sir_p50 >= 1 & sir_p50 < 1.5  ~ "C",
+      sir_p50 >= 1.5 & sir_p50 < 2  ~ "D",
+      sir_p50 > 2  ~ "E")) %>% select(name, colrs)
+```
+
+```{r}
+p1 <- ggplot() +
+  # geom_polypath(data=sa2_tidy, aes(x=long, y=lat, group=group),
+  #              fill="white", colour="grey90") +
+  geom_hex(data=sa2_mel %>% left_join(., sa2_colours), inherit.aes = FALSE,
+           aes(x = hex_long, y = hex_lat,
+               fill = colrs),
+           colour = NA, stat = "identity") +
+  scale_fill_manual(values = nac_colours)+
+  theme_map() + 
+  guides(fill=FALSE)
+```
+
+```{r}
+p2 <- ggplot(sa2_tidy %>% 
+               left_join(., sa2_colours, by = c("SA2_NAME11" = "name"))) + 
+  geom_polypath(aes(x=long, y=lat, group=group,
+               fill=colrs)) +
+  scale_fill_manual(values = nac_colours) +
+  theme_map() + 
+  guides(fill=FALSE)
+
+grid.arrange(p1,p2,nrow=2)
+
+```
+
+## Rural vs Urban
+
+We currently do not have a measure of "rurality", it may be possible to use Greater Capital City areas.
+
+## Presence of an Outlier
+
+### Urban Outlier
+
+```{r}
+sa2_colours_out <- sa2_colours %>% mutate(colrs = ifelse(name == "Perth City", "E", colrs))
+
+p1 <- ggplot() +
+  geom_polypath(data=sa2_tidy, aes(x=long, y=lat, group=group),
+               fill="white", colour="grey90") +
+  geom_hex(data=sa2_mel %>% left_join(., sa2_colours_out), inherit.aes = FALSE,
+           aes(x = hex_long, y = hex_lat,
+               fill = colrs),
+           colour = NA, stat = "identity") +
+  scale_fill_manual(values = nac_colours)+
+  theme_map() + 
+  guides(fill=FALSE)
+```
+
+```{r}
+p2 <- ggplot(sa2_tidy %>% 
+               left_join(., sa2_colours_out, by = c("SA2_NAME11" = "name"))) + 
+  geom_polypath(aes(x=long, y=lat, group=group,
+               fill=colrs)) +
+  scale_fill_manual(values = nac_colours) +
+  theme_map() + 
+  guides(fill=FALSE)
+
+grid.arrange(p1,p2,nrow=2)
+
+```
+
+### Rural Outlier
+
+```{r}
+sa2_colours_out <- sa2_colours %>% mutate(colrs = ifelse(name == "Outback", "E", colrs))
+
+p1 <- ggplot() +
+  geom_polypath(data=sa2_tidy, aes(x=long, y=lat, group=group),
+               fill="white", colour="grey90") +
+  geom_hex(data=sa2_mel %>% left_join(., sa2_colours_out), inherit.aes = FALSE,
+           aes(x = hex_long, y = hex_lat,
+               fill = colrs),
+           colour = NA, stat = "identity") +
+  scale_fill_manual(values = nac_colours)+
+  theme_map() + 
+  guides(fill=FALSE)
+```
+
+```{r}
+p2 <- ggplot(sa2_tidy %>% 
+               left_join(., sa2_colours_out, by = c("SA2_NAME11" = "name"))) + 
+  geom_polypath(aes(x=long, y=lat, group=group,
+               fill=colrs)) +
+  scale_fill_manual(values = nac_colours) +
+  theme_map() + 
+  guides(fill=FALSE)
+
+grid.arrange(p1,p2,nrow=2)
+
+```
+
+
+
