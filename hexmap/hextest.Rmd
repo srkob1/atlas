@@ -21,7 +21,7 @@ library(tidyverse)
 library(ggpolypath)
 library(ggthemes)
 library(gridExtra)
-library(plotly)
+
 # Tidy format spatial polygons, for easy plotting
 load("data/sa2_tidy11.Rda")
 # Hex gridded sa2 regions

@@ -12,10 +12,10 @@ editor_options:
 knitr::opts_chunk$set(echo = FALSE, 
                       message=FALSE, 
                       error=FALSE, 
-                      warning = FALSE, cache=FALSE,
+                      warning = FALSE, cache=TRUE,
                       fig.height = 8,
                       fig.width = 6, fig.align = "centre",
-                      dpi=300, dev ="png")
+                      dpi=200, dev ="png")
 ```
 
 # Distribution of Incidence Values
@@ -149,5 +149,67 @@ p2 <- ggplot(sa2_tidy %>%
 grid.arrange(p1,p2,nrow=2)
 ```
 
+
+## Presence of a cluster of extremes
+### Urban cluster
+
+```{r}
+sa2_colours_out <- sa2_colours %>% mutate(
+  colrs = ifelse(name %in% c("Stuart Park","Darwin City", "Darwin Airport","Fannie Bay - The Gardens", "Larrakeyah", "Woolner - Bayview - Winnellie"), "E", 
+                 ifelse(name %in% c("Darwin Airport", "Parap", "East Point"), "D", colrs)))
+
+p1 <- ggplot() +
+  geom_polypath(data=sa2_tidy, aes(x=long, y=lat, group=group),
+               fill="white", colour="grey90") +
+  geom_hex(data=sa2_mel %>% left_join(., sa2_colours_out), inherit.aes = FALSE,
+           aes(x = hex_long, y = hex_lat,
+               fill = colrs),
+           colour = NA, stat = "identity") +
+  scale_fill_manual(values = nac_colours)+
+  theme_map() + 
+  guides(fill=FALSE)
+
+data = left_join(sa2_tidy, sa2_colours_out, by = c("SA2_NAME11" = "name"))
+
+p2 <- ggplot(data ) + 
+  geom_polypath(aes(x=long, y=lat, group=group,
+               fill=colrs)) +
+  scale_fill_manual(values = nac_colours) +
+  theme_map() + 
+  guides(fill=FALSE)
+
+grid.arrange(p1,p2,nrow=2)
+```
+
+
+### Rural cluster
+
+```{r}
+sa2_colours_out <- sa2_colours %>% mutate(
+  colrs = ifelse(name %in% c("Daly","Victoria River", "Tanami","Yuendumu - Anmatjere"), "E", 
+                 ifelse(name %in% c("Elsey", "Katherine", "Thamarrurr"), "D", colrs)))
+
+p1 <- ggplot() +
+  # geom_polypath(data=sa2_tidy, aes(x=long, y=lat, group=group),
+  #              fill="white", colour="grey90") +
+  geom_hex(data=sa2_mel %>% left_join(., sa2_colours_out), inherit.aes = FALSE,
+           aes(x = hex_long, y = hex_lat,
+               fill = colrs, label = SA2_NAME11),
+           colour = NA, stat = "identity") +
+  scale_fill_manual(values = nac_colours)+
+  theme_map() + 
+  guides(fill=FALSE)
+
+data = left_join(sa2_tidy, sa2_colours_out, by = c("SA2_NAME11" = "name"))
+
+p2 <- ggplot(data ) + 
+  geom_polypath(aes(x=long, y=lat, group=group,
+               fill=colrs)) +
+  scale_fill_manual(values = nac_colours) +
+  theme_map() + 
+  guides(fill=FALSE)
+
+grid.arrange(p1,p2,nrow=2)
+```
 
 
