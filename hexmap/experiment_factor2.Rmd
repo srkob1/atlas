@@ -3,6 +3,7 @@ title: "Experiment Factor 2"
 author: "Stephanie Kobakian and Di Cook"
 date: "5/8/2018"
 output: pdf_document
+toc: true
 editor_options: 
   chunk_output_type: console
 ---
@@ -11,12 +12,13 @@ editor_options:
 knitr::opts_chunk$set(echo = FALSE, 
                       message=FALSE, 
                       error=FALSE, 
-                      warning = FALSE)
+                      warning = FALSE, cache=FALSE,
+                      fig.height = 8,
+                      fig.width = 6, fig.align = "centre",
+                      dpi=300, dev ="png")
 ```
 
 # Distribution of Incidence Values
-
-## Actual Data 
 
 ```{r}
 # Load libraries and data sets
@@ -31,7 +33,7 @@ load("data/sa2_tidy11.Rda")
 load("data/sa2_hex11.Rda")
 # Melanoma data
 melanoma_aus <- read_csv("data/melanoma_people_aus.csv")
-#setdiff(melanoma_aus$sa2name, sa2_hex$name)
+
 sa2_mel <- left_join(sa2_hex, melanoma_aus, by = c("name"= "sa2name"))
 ```
  
@@ -40,7 +42,7 @@ Map of Australian SA2 areas represented by hexagons, coloured by National Cancer
 Data provided by Susanna Cramb and Thom Saunders.
 
 
-```{r fig.height=5, fig.width =8}
+```{r}
 nac_colours <- c("A" = "#33809d",
                  "B" = "#aec6c7",
                  "C" = "#fff4bc",
@@ -56,18 +58,16 @@ sa2_colours <- sa2_mel %>% mutate(colrs = case_when(
 
 ```{r}
 p1 <- ggplot() +
-  # geom_polypath(data=sa2_tidy, aes(x=long, y=lat, group=group),
-  #              fill="white", colour="grey90") +
-  geom_hex(data=sa2_mel %>% left_join(., sa2_colours), inherit.aes = FALSE,
+  geom_polypath(data=sa2_tidy, aes(x=long, y=lat, group=group),
+               fill="white", colour="grey90") +
+  geom_hex(data=sa2_mel %>% left_join(., sa2_colours),
            aes(x = hex_long, y = hex_lat,
                fill = colrs),
            colour = NA, stat = "identity") +
   scale_fill_manual(values = nac_colours)+
   theme_map() + 
   guides(fill=FALSE)
-```
 
-```{r}
 p2 <- ggplot(sa2_tidy %>% 
                left_join(., sa2_colours, by = c("SA2_NAME11" = "name"))) + 
   geom_polypath(aes(x=long, y=lat, group=group,
@@ -82,7 +82,15 @@ grid.arrange(p1,p2,nrow=2)
 
 ## Rural vs Urban
 
-We currently do not have a measure of "rurality", it may be possible to use Greater Capital City areas.
+Using the remoteness values.
+```{r}
+#sa2_canc %>% filter(sexname =="Persons") %>% ggplot(.) + geom_histogram(aes(x = sir_p50 )) + facet_grid(cancergrpname ~ ra5catname)
+
+# sa2_canc %>% filter(sexname =="Persons") %>% ggplot(.) + geom_bar(aes(x=ra5catname))
+
+```
+
+
 
 ## Presence of an Outlier
 
@@ -101,9 +109,7 @@ p1 <- ggplot() +
   scale_fill_manual(values = nac_colours)+
   theme_map() + 
   guides(fill=FALSE)
-```
 
-```{r}
 p2 <- ggplot(sa2_tidy %>% 
                left_join(., sa2_colours_out, by = c("SA2_NAME11" = "name"))) + 
   geom_polypath(aes(x=long, y=lat, group=group,
@@ -131,9 +137,7 @@ p1 <- ggplot() +
   scale_fill_manual(values = nac_colours)+
   theme_map() + 
   guides(fill=FALSE)
-```
 
-```{r}
 p2 <- ggplot(sa2_tidy %>% 
                left_join(., sa2_colours_out, by = c("SA2_NAME11" = "name"))) + 
   geom_polypath(aes(x=long, y=lat, group=group,
@@ -143,7 +147,6 @@ p2 <- ggplot(sa2_tidy %>%
   guides(fill=FALSE)
 
 grid.arrange(p1,p2,nrow=2)
-
 ```
 
 

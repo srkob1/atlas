@@ -13,7 +13,9 @@ knitr::opts_chunk$set(echo = FALSE,
                       error=FALSE, 
                       warning = FALSE, cache=FALSE,
                       fig.height = 4,
-                      fig.width = 6, fig.align = "centre", dpi=300)
+                      fig.width = 6, 
+                      fig.align = "centre", 
+                      dpi=300, dev ="png")
 ```
 
 
