@@ -1,0 +1,215 @@
+---
+title: "Experiment Factor 2"
+author: "Stephanie Kobakian and Di Cook"
+date: "5/8/2018"
+output: pdf_document
+toc: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, 
+                      message=FALSE, 
+                      error=FALSE, 
+                      warning = FALSE, cache=TRUE,
+                      fig.height = 8,
+                      fig.width = 6, fig.align = "centre",
+                      dpi=200, dev ="png")
+```
+
+# Distribution of Incidence Values
+
+```{r}
+# Load libraries and data sets
+library(tidyverse)
+library(ggthemes)
+library(gridExtra)
+library(ggpolypath)
+
+# Tidy format spatial polypaths, for easy plotting
+load("data/sa2_tidy11.Rda")
+# Hex gridded sa2 regions
+load("data/sa2_hex11.Rda")
+# Melanoma data
+melanoma_aus <- read_csv("data/melanoma_people_aus.csv")
+
+sa2_mel <- left_join(sa2_hex, melanoma_aus, by = c("name"= "sa2name"))
+```
+ 
+
+Map of Australian SA2 areas represented by hexagons, coloured by National Cancer Atlas colours.
+Data provided by Susanna Cramb and Thom Saunders.
+
+
+```{r}
+nac_colours <- c("A" = "#33809d",
+                 "B" = "#aec6c7",
+                 "C" = "#fff4bc",
+                 "D" = "#ff9a64",
+                 "E" = "#ff3500")
+sa2_colours <- sa2_mel %>% mutate(colrs = case_when(
+      sir_p50 < 0.5  ~ "A",
+      sir_p50 >= 0.5 & sir_p50 < 1  ~ "B",
+      sir_p50 >= 1 & sir_p50 < 1.5  ~ "C",
+      sir_p50 >= 1.5 & sir_p50 < 2  ~ "D",
+      sir_p50 > 2  ~ "E")) %>% select(name, colrs)
+```
+
+```{r}
+p1 <- ggplot() +
+  geom_polypath(data=sa2_tidy, aes(x=long, y=lat, group=group),
+               fill="white", colour="grey90") +
+  geom_hex(data=sa2_mel %>% left_join(., sa2_colours),
+           aes(x = hex_long, y = hex_lat,
+               fill = colrs),
+           colour = NA, stat = "identity") +
+  scale_fill_manual(values = nac_colours)+
+  theme_map() + 
+  guides(fill=FALSE)
+
+p2 <- ggplot(sa2_tidy %>% 
+               left_join(., sa2_colours, by = c("SA2_NAME11" = "name"))) + 
+  geom_polypath(aes(x=long, y=lat, group=group,
+               fill=colrs)) +
+  scale_fill_manual(values = nac_colours) +
+  theme_map() + 
+  guides(fill=FALSE)
+
+grid.arrange(p1,p2,nrow=2)
+
+```
+
+## Rural vs Urban
+
+Using the remoteness values.
+```{r}
+#sa2_canc %>% filter(sexname =="Persons") %>% ggplot(.) + geom_histogram(aes(x = sir_p50 )) + facet_grid(cancergrpname ~ ra5catname)
+
+# sa2_canc %>% filter(sexname =="Persons") %>% ggplot(.) + geom_bar(aes(x=ra5catname))
+
+```
+
+
+
+## Presence of an Outlier
+
+### Urban Outlier
+
+```{r}
+sa2_colours_out <- sa2_colours %>% mutate(colrs = ifelse(name == "Perth City", "E", colrs))
+
+p1 <- ggplot() +
+  geom_polypath(data=sa2_tidy, aes(x=long, y=lat, group=group),
+               fill="white", colour="grey90") +
+  geom_hex(data=sa2_mel %>% left_join(., sa2_colours_out), inherit.aes = FALSE,
+           aes(x = hex_long, y = hex_lat,
+               fill = colrs),
+           colour = NA, stat = "identity") +
+  scale_fill_manual(values = nac_colours)+
+  theme_map() + 
+  guides(fill=FALSE)
+
+p2 <- ggplot(sa2_tidy %>% 
+               left_join(., sa2_colours_out, by = c("SA2_NAME11" = "name"))) + 
+  geom_polypath(aes(x=long, y=lat, group=group,
+               fill=colrs)) +
+  scale_fill_manual(values = nac_colours) +
+  theme_map() + 
+  guides(fill=FALSE)
+
+grid.arrange(p1,p2,nrow=2)
+
+```
+
+### Rural Outlier
+
+```{r}
+sa2_colours_out <- sa2_colours %>% mutate(colrs = ifelse(name == "Outback", "E", colrs))
+
+p1 <- ggplot() +
+  geom_polypath(data=sa2_tidy, aes(x=long, y=lat, group=group),
+               fill="white", colour="grey90") +
+  geom_hex(data=sa2_mel %>% left_join(., sa2_colours_out), inherit.aes = FALSE,
+           aes(x = hex_long, y = hex_lat,
+               fill = colrs),
+           colour = NA, stat = "identity") +
+  scale_fill_manual(values = nac_colours)+
+  theme_map() + 
+  guides(fill=FALSE)
+
+p2 <- ggplot(sa2_tidy %>% 
+               left_join(., sa2_colours_out, by = c("SA2_NAME11" = "name"))) + 
+  geom_polypath(aes(x=long, y=lat, group=group,
+               fill=colrs)) +
+  scale_fill_manual(values = nac_colours) +
+  theme_map() + 
+  guides(fill=FALSE)
+
+grid.arrange(p1,p2,nrow=2)
+```
+
+
+## Presence of a cluster of extremes
+### Urban cluster
+
+```{r}
+sa2_colours_out <- sa2_colours %>% mutate(
+  colrs = ifelse(name %in% c("Stuart Park","Darwin City", "Darwin Airport","Fannie Bay - The Gardens", "Larrakeyah", "Woolner - Bayview - Winnellie"), "E", 
+                 ifelse(name %in% c("Darwin Airport", "Parap", "East Point"), "D", colrs)))
+
+p1 <- ggplot() +
+  geom_polypath(data=sa2_tidy, aes(x=long, y=lat, group=group),
+               fill="white", colour="grey90") +
+  geom_hex(data=sa2_mel %>% left_join(., sa2_colours_out), inherit.aes = FALSE,
+           aes(x = hex_long, y = hex_lat,
+               fill = colrs),
+           colour = NA, stat = "identity") +
+  scale_fill_manual(values = nac_colours)+
+  theme_map() + 
+  guides(fill=FALSE)
+
+data = left_join(sa2_tidy, sa2_colours_out, by = c("SA2_NAME11" = "name"))
+
+p2 <- ggplot(data ) + 
+  geom_polypath(aes(x=long, y=lat, group=group,
+               fill=colrs)) +
+  scale_fill_manual(values = nac_colours) +
+  theme_map() + 
+  guides(fill=FALSE)
+
+grid.arrange(p1,p2,nrow=2)
+```
+
+
+### Rural cluster
+
+```{r}
+sa2_colours_out <- sa2_colours %>% mutate(
+  colrs = ifelse(name %in% c("Daly","Victoria River", "Tanami","Yuendumu - Anmatjere"), "E", 
+                 ifelse(name %in% c("Elsey", "Katherine", "Thamarrurr"), "D", colrs)))
+
+p1 <- ggplot() +
+  # geom_polypath(data=sa2_tidy, aes(x=long, y=lat, group=group),
+  #              fill="white", colour="grey90") +
+  geom_hex(data=sa2_mel %>% left_join(., sa2_colours_out), inherit.aes = FALSE,
+           aes(x = hex_long, y = hex_lat,
+               fill = colrs, label = SA2_NAME11),
+           colour = NA, stat = "identity") +
+  scale_fill_manual(values = nac_colours)+
+  theme_map() + 
+  guides(fill=FALSE)
+
+data = left_join(sa2_tidy, sa2_colours_out, by = c("SA2_NAME11" = "name"))
+
+p2 <- ggplot(data ) + 
+  geom_polypath(aes(x=long, y=lat, group=group,
+               fill=colrs)) +
+  scale_fill_manual(values = nac_colours) +
+  theme_map() + 
+  guides(fill=FALSE)
+
+grid.arrange(p1,p2,nrow=2)
+```
+
+
