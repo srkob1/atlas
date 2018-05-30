@@ -123,7 +123,7 @@ for (i in 3:nrow(cancers)) {
 }
 
 
-# loop over cancers
+# loop over female cancers
 female_cancers <- cancers %>% filter(cancergrp %in% c(33, 35, 36, 37))
 for (i in 1:nrow(female_cancers)) {
   cat(i, "\n")
@@ -172,4 +172,50 @@ for (i in 1:nrow(female_cancers)) {
   ggsave(flnm, plot=p2)
 
 }
+
+# loop over male cancers
+male_cancers <- cancers %>% filter(cancergrp == 39)
+  cr <- sa2_estimates %>%
+    filter(cancergrp == male_cancers$cancergrp[1]) %>%
+    select(cancergrp, sa2, females_p50)
+  # Check match - there is one mismatch
+  cr %>% anti_join(sa2_hex, by=c("sa2"="SA2_5DIG11"))
+
+  # Now join, using hexes as base
+  cr_hex <- left_join(sa2_hex %>% select(SA2_5DIG11, hex_long, hex_lat, long_c, lat_c, SA2_NAME11, GCC_NAME11, STE_NAME11, SUA), cr, by=c("SA2_5DIG11"="sa2"))
+
+  cr_hex <- cr_hex %>% mutate(colrs = case_when(
+    males_p50 < 0.75  ~ "A",
+    males_p50 >= 0.75 & males_p50 < 1  ~ "B",
+    males_p50 >= 1 & males_p50 < 1.25  ~ "C",
+    males_p50 >= 1.25 & males_p50 < 1.5  ~ "D",
+    males_p50 > 1.5  ~ "E")) %>%
+    mutate(colrs = factor(colrs, levels = c("A", "B", "C", "D", "E")))
+
+  # Hexmap
+  p1 <- ggplot() + geom_polypath(data=aus_map, aes(x=long, y=lat, group=group),
+                                 fill="grey98", colour="white", size=1) +
+    geom_hex(data=cr_hex, aes(x = hex_long, y = hex_lat,
+                              fill = colrs),
+             colour = NA, stat = "identity") +
+    scale_fill_manual(values = nac_colours) +
+    theme_map() +
+    guides(fill=FALSE)
+  flnm <- paste0(male_cancers$cancergrpname[1], "_hex.png")
+  flnm <- sub(" cancer", "", flnm)
+  ggsave(flnm, plot=p1)
+
+  # Choropleth map
+  sa2_map <- left_join(sa2_tidy, cr_hex, by="SA2_5DIG11")
+  p2 <- ggplot() +
+    geom_polygon(data=sa2_map, aes(x=long, y=lat, group=group,
+                                   fill = colrs),
+                 colour="white", size=0.1) +
+    #expand_limits(x = sa2_map$long, y = sa2_map$lat) +
+    scale_fill_manual(values = nac_colours) +
+    theme_map() +
+    guides(fill=FALSE)
+  flnm <- paste0(male_cancers$cancergrpname[1], "_map.png")
+  flnm <- sub(" cancer", "", flnm)
+  ggsave(flnm, plot=p2)
 
