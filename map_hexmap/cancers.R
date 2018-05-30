@@ -177,7 +177,7 @@ for (i in 1:nrow(female_cancers)) {
 male_cancers <- cancers %>% filter(cancergrp == 39)
   cr <- sa2_estimates %>%
     filter(cancergrp == male_cancers$cancergrp[1]) %>%
-    select(cancergrp, sa2, females_p50)
+    select(cancergrp, sa2, males_p50)
   # Check match - there is one mismatch
   cr %>% anti_join(sa2_hex, by=c("sa2"="SA2_5DIG11"))
 
