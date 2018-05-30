@@ -124,12 +124,12 @@ for (i in 3:nrow(cancers)) {
 
 
 # loop over cancers
-female_cancers <- cancers %>% filter(cancergrp %in% c()
-for (i in 3:nrow(cancers)) {
+female_cancers <- cancers %>% filter(cancergrp %in% c())
+for (i in 3:nrow(female_cancers)) {
   cat(i, "\n")
   cr <- sa2_estimates %>%
     filter(cancergrp == cancers$cancergrp[i]) %>%
-    select(cancergrp, sa2, persons_p50)
+    select(cancergrp, sa2, female_p50)
   # Check match - there is one mismatch
   cr %>% anti_join(sa2_hex, by=c("sa2"="SA2_5DIG11"))
 
@@ -137,11 +137,11 @@ for (i in 3:nrow(cancers)) {
   cr_hex <- left_join(sa2_hex %>% select(SA2_5DIG11, hex_long, hex_lat, long_c, lat_c, SA2_NAME11, GCC_NAME11, STE_NAME11, SUA), cr, by=c("SA2_5DIG11"="sa2"))
 
   cr_hex <- cr_hex %>% mutate(colrs = case_when(
-    persons_p50 < 0.75  ~ "A",
-    persons_p50 >= 0.75 & persons_p50 < 1  ~ "B",
-    persons_p50 >= 1 & persons_p50 < 1.25  ~ "C",
-    persons_p50 >= 1.25 & persons_p50 < 1.5  ~ "D",
-    persons_p50 > 1.5  ~ "E")) %>%
+    female_p50 < 0.75  ~ "A",
+    female_p50 >= 0.75 & female_p50 < 1  ~ "B",
+    female_p50 >= 1 & female_p50 < 1.25  ~ "C",
+    female_p50 >= 1.25 & female_p50 < 1.5  ~ "D",
+    female_p50 > 1.5  ~ "E")) %>%
     mutate(colrs = factor(colrs, levels = c("A", "B", "C", "D", "E")))
 
   # Hexmap
