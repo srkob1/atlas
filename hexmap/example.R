@@ -57,14 +57,17 @@ source("hexagon.R")
 radius <- 0.3
 
 # Create hexagon grid
-grid <- create_grid(sa2@bbox, radius)
-grid <- grid %>% mutate(id=1:nrow(grid), assigned=FALSE)
+grid3 <- create_grid(sa2@bbox, radius)
+grid3 <- grid3 %>% mutate(id=1:nrow(grid3), assigned=FALSE)
 
 # Mapping SA2 to closest hexagon grid, in order of population,
 # and then distance
-# sa2_hex <- centroids %>%
-#   arrange(desc(pop)) %>%
-#   assign_hexagons(., grid)
+system.time(
+sa2_hex3 <- centroids %>%
+  arrange(desc(pop)) %>%
+  #write in a return of all possible allocations
+  assign_hexagons(., grid3))
+write_csv(sa2_hex3, path="data/sa2_hex3.csv")
 
 load("data/sa2_hex11.Rda")
 
@@ -96,7 +99,7 @@ ggplotly()
 ggplot(sa2_tidy) +
   geom_polygon(aes(x=long, y=lat, group=group),
                fill="white", colour="grey90") +
-  geom_hex(data=sa2_hex, aes(x = hex_long, y = hex_lat,
+  geom_hex(data=sa2_hex01, aes(x = hex_long, y = hex_lat,
                              fill = pop, label=name),
          stat = "identity", colour = NA, alpha = 0.75) +
   scale_fill_gradient(low = "#d8c0a8", high = "#a86030") +

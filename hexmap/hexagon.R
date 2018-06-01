@@ -38,18 +38,24 @@ assign_hexagons <- function(centroids, grid) {
   # Loop over centroids to assign to nearest grid location
   for (i in 1:NROW(centroids)) {
     print(i)
+    #browser()
     olong <- centroids$long[i]
     olat <- centroids$lat[i]
 
-    grid_nasgn <- grid %>% filter(!assigned)
-
+    # implement filtering safely
+        grid_nasgn <- grid %>% filter(!assigned) %>% 
+      filter(between(hex_lat, olat-3, olat+3)) %>%
+      filter(between(hex_long, olong-3.5, olong+3.5))
+    
     distance <- distVincentyEllipsoid(
       c(olong, olat), cbind(grid_nasgn$hex_long,grid_nasgn$hex_lat),
-      a=6378137, b=6356752.3141, f=1/298.257222101)
+      a=6378160, b=6356774.719, f=1/298.257222101)
     distance_df <- cbind(grid_nasgn, distance) %>%
       arrange(distance)
-
+    
+    print(distance_df[1,])
     mindist_id <- distance_df$id[1]
+    
     grid$assigned[mindist_id] <- TRUE
     centroids$hex_id[i] <- mindist_id
     centroids$hex_long[i] <- distance_df$hex_long[1]
@@ -59,3 +65,4 @@ assign_hexagons <- function(centroids, grid) {
 
   return(centroids)
 }
+
