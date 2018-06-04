@@ -5,6 +5,7 @@
 atlas.Rproj
 *.DS_Store
 data/SA2_2016_AUST
+hexmap/data/SA2_2011_AUST
 data/simulations
 data/region
 figures/simulations
