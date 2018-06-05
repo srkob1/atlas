@@ -2,21 +2,31 @@
 # Inputs are the 2x2 matrix defining bounding box;
 # the radius, which sets the binwidth for the grid;
 # the proportion to expand the long of the grid 
+# alternative to expand.grid
+#
+
+expand <- function(seq1,seq2) {
+  cbind(hex_long = rep.int(seq1, length(seq2)), 
+        hex_lat = rep.int(seq2, rep.int(length(seq1),length(seq2))))
+}
+
 create_grid <- function(bbox, radius, expand_long = 0.1) {
   expand <- (bbox[1,2] - bbox[1,1])*expand_long
-  grid <- expand.grid(hex_long = seq(bbox[1,1] - expand,
+  #browser()
+  grid <- as.tibble(expand(seq1 = seq(bbox[1,1] - expand,
                                  bbox[1,2] + expand,
                                  radius),
-                      hex_lat = seq(bbox[2,1],
+                      seq2 = seq(bbox[2,1],
                                    bbox[2,2],
-                                   radius))
-
+                                   radius)))
+  
+  
   # Only shift every second latitude - to make hex structure
     lat <- grid %>% select(hex_lat) %>%
       distinct() %>%
       filter(row_number() %% 2 == 1) %>% unlist()
 
-  grid <- grid %>% rowwise %>%
+  grid <- grid %>%
     mutate(hex_long = ifelse(hex_lat %in% lat, hex_long,
                              hex_long + (radius/2))) %>%
     ungroup()
@@ -24,12 +34,20 @@ create_grid <- function(bbox, radius, expand_long = 0.1) {
   return(grid)
 }
 
+grid_filter <- function(grid, gridbox, olong, olat){
+  #browser()
+  grid %>% filter(!assigned) %>% 
+    filter(between(hex_lat, olat-gridbox, olat+gridbox)) %>%
+    filter(between(hex_long, olong-gridbox, olong+gridbox))
+}
+
+
 # Function to take lat/long centroids from spatial polygons
 # and assign to closest hexgrid location.
 # DI SAYS: change separate long, lat input to one tibble for
 #         centroids, and one for hexgrid
 # STEFF SAYS: what about using only the shape file, create grid internally?
-assign_hexagons <- function(centroids, grid) {
+assign_hexagons <- function(centroids, grid, radius = radius) {
   centroids$hex_long <- NA
   centroids$hex_lat <- NA
   centroids$hex_id <- NA
@@ -42,11 +60,22 @@ assign_hexagons <- function(centroids, grid) {
     olong <- centroids$long[i]
     olat <- centroids$lat[i]
 
-    # implement filtering safely
-        grid_nasgn <- grid %>% filter(!assigned) %>% 
-      filter(between(hex_lat, olat-3, olat+3)) %>%
-      filter(between(hex_long, olong-3.5, olong+3.5))
+    width = max(grid$hex_long)-min(grid$hex_long)
     
+    # implement filtering safely
+        grid_nasgn <- grid_filter(grid = grid, 
+                                           gridbox = ((exp(radius))/width)*10,
+                                           olong=olong,
+                                           olat=olat)
+        while (NROW(grid_nasgn)==0){
+          message("Expanded")
+          large_radius <- radius*1.5
+          grid_nasgn <- grid_filter(grid = grid, 
+                                    gridbox = ((exp(large_radius))/width)*10,
+                                    olong=olong,
+                                    olat=olat)
+        }
+        
     distance <- distVincentyEllipsoid(
       c(olong, olat), cbind(grid_nasgn$hex_long,grid_nasgn$hex_lat),
       a=6378160, b=6356774.719, f=1/298.257222101)

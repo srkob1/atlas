@@ -54,20 +54,20 @@ source("hexagon.R")
 
 # Set radius for hexagons to layout a reasonable grid for the country
 # This is chosen arbitrarily, depending on the desired amount of geographical space each hex is allocated
-radius <- 0.3
+radius <- 0.01
 
 # Create hexagon grid
-grid3 <- create_grid(sa2@bbox, radius)
-grid3 <- grid3 %>% mutate(id=1:nrow(grid3), assigned=FALSE)
+grid01 <- create_grid(bbox, radius)
+grid01 <- grid01 %>% mutate(id=1:nrow(grid01), assigned=FALSE)
 
 # Mapping SA2 to closest hexagon grid, in order of population,
 # and then distance
 system.time(
-sa2_hex3 <- centroids %>%
+sa2_hex01 <- centroids %>%
   arrange(desc(pop)) %>%
   #write in a return of all possible allocations
-  assign_hexagons(., grid3))
-write_csv(sa2_hex3, path="data/sa2_hex3.csv")
+  assign_hexagons(., grid01, radius))
+write_csv(sa2_hex01, path="data/sa2_hex01.csv")
 
 load("data/sa2_hex11.Rda")
 
@@ -87,19 +87,12 @@ write_csv(sa2_hex, path = "data/sa2_hex.csv")
 save(sa2_hex, file = "data/sa2_hex.Rda")
 load("data/sa2_hex.Rda")
 
-ggplot(sa2_tidy) +
-  geom_polygon(aes(x=long, y=lat, group=group),
-               fill="white", colour="grey90") +
-  geom_point(data=sa2_hex, aes(x=hex_long, y=hex_lat, label=name), alpha=0.5) +
-  coord_map() + theme_map()
-
-ggplotly()
 
 # Using ochRe palette namatjira_qual
 ggplot(sa2_tidy) +
   geom_polygon(aes(x=long, y=lat, group=group),
                fill="white", colour="grey90") +
-  geom_hex(data=sa2_hex01, aes(x = hex_long, y = hex_lat,
+  geom_hex(data=sa2_hex1, aes(x = hex_long, y = hex_lat,
                              fill = pop, label=name),
          stat = "identity", colour = NA, alpha = 0.75) +
   scale_fill_gradient(low = "#d8c0a8", high = "#a86030") +
@@ -120,7 +113,7 @@ save(sa2_hex, file = "data/sa2_hex.Rda")
 ggplot(sa2_tidy) +
   geom_polygon(aes(x=long, y=lat, group=group),
                fill="white", colour="grey90") +
-  geom_hex(data=sa2_hex, aes(x = hex_long, y = hex_lat,
-                             fill = state, label=name),
+  geom_hex(data=sa2_hex3, aes(x = hex_long, y = hex_lat,
+                             fill = pop, label=name),
            stat = "identity", colour=NA, alpha = 0.75) +
   theme_map()
