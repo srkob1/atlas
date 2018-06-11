@@ -48,26 +48,28 @@ centroids <- sa2@data %>%
                          SUA_NAME_2011 == "Not in any Significant Urban Area (OT)"
                                                      ~ "Not in any Significant Urban Area",
                                                      TRUE ~ as.character(SUA_NAME_2011)))
+# bbox <- data.frame(min = c(113.7107,-43.32902),
+#            max = c(153.6002, -10.18244))
 
 # Find the functions to use
 source("hexagon.R")
 
 # Set radius for hexagons to layout a reasonable grid for the country
 # This is chosen arbitrarily, depending on the desired amount of geographical space each hex is allocated
-radius <- 0.01
+radius <- 0.005
 
 # Create hexagon grid
-grid01 <- create_grid(bbox, radius)
-grid01 <- grid01 %>% mutate(id=1:nrow(grid01), assigned=FALSE)
+grid005 <- create_grid(bbox, radius, expand_long = 0.000005)
+grid005 <- grid005 %>% mutate(id=1:nrow(grid005), assigned=FALSE)
 
 # Mapping SA2 to closest hexagon grid, in order of population,
 # and then distance
 system.time(
-sa2_hex01 <- centroids %>%
+sa2_hex005 <- centroids %>%
   arrange(desc(pop)) %>%
   #write in a return of all possible allocations
-  assign_hexagons(., grid01, radius))
-write_csv(sa2_hex01, path="data/sa2_hex01.csv")
+  assign_hexagons(., grid005))
+write_csv(sa2_hex005, path="data/sa2_hex005.csv")
 
 load("data/sa2_hex11.Rda")
 
