@@ -6,7 +6,7 @@ library(hexbin)
 library(gridExtra)
 library(ggthemes)
 library(plotly)
-library(geosphere)
+library(sp)
 
 # source(sa2_tidy.R)
 
@@ -56,25 +56,25 @@ source("hexagon.R")
 
 # Set radius for hexagons to layout a reasonable grid for the country
 # This is chosen arbitrarily, depending on the desired amount of geographical space each hex is allocated
-radius <- 0.005
+radius <- 0.3
 
 # Create hexagon grid
-grid005 <- create_grid(bbox, radius, expand_long = 0.000005)
-grid005 <- grid005 %>% mutate(id=1:nrow(grid005), assigned=FALSE)
+grid1 <- create_grid(sa2@bbox, radius)
+grid1 <- grid1 %>% mutate(id=1:nrow(grid1), assigned=FALSE)
 
-# Mapping SA2 to closest hexagon grid, in order of population,
+# Mapping sa2 to closest hexagon grid, in order of population,
 # and then distance
 system.time(
-sa2_hex005 <- centroids %>%
+sa2_hex3 <- centroids %>%
   arrange(desc(pop)) %>%
   #write in a return of all possible allocations
-  assign_hexagons(., grid005))
-write_csv(sa2_hex005, path="data/sa2_hex005.csv")
+  assign_hexagons(., grid1, 0.3))
+write_csv(sa2_hex3, path="data/hex/sa2_hex3.csv")
 
-load("data/sa2_hex11.Rda")
+load("data/sa2_hex005.Rda")
 
 # Checks
-ggplot(sa2_hex, aes(x=hex_long, y=hex_lat, colour=name)) + geom_point() + geom_point(aes(x=long, y=lat), shape=2)
+ggplot(sa2_hex, aes(x=hex_long, y=hex_lat, colour=name)) + geom_point(aes(x=long, y=lat), shape=2)
 p1 <- ggplot(sa2_hex, aes(x=long, y=hex_long, colour=rank(desc(pop)))) +
   geom_abline(slope=1, intercept=0) + geom_point(alpha=0.1) +
   theme(aspect.ratio=1, legend.position="none")
@@ -91,10 +91,10 @@ load("data/sa2_hex.Rda")
 
 
 # Using ochRe palette namatjira_qual
-ggplot(sa2_tidy) +
+v1 <- ggplot(sa2_tidy) +
   geom_polygon(aes(x=long, y=lat, group=group),
                fill="white", colour="grey90") +
-  geom_hex(data=sa2_hex1, aes(x = hex_long, y = hex_lat,
+  geom_hex(data=sa2_hex07v2, aes(x = hex_long, y = hex_lat,
                              fill = pop, label=name),
          stat = "identity", colour = NA, alpha = 0.75) +
   scale_fill_gradient(low = "#d8c0a8", high = "#a86030") +
@@ -105,17 +105,11 @@ ggplot(sa2_tidy) +
   scale_fill_gradient(low = "#d8c0a8", high = "#a86030") +
   theme_map()
 
-sa2_hex <- sa2_hex %>%
-  left_join(distinct(select(sa2_tidy, SA2_NAME11, STE_NAME11, GCC_NAME11)), by=c("name"="SA2_NAME11")) %>%
-  rename(state=STE_NAME11, capitals=GCC_NAME11)
-# Save with the extra info
-write_csv(sa2_hex, path = "data/sa2_hex.csv")
-save(sa2_hex, file = "data/sa2_hex.Rda")
 
 ggplot(sa2_tidy) +
   geom_polygon(aes(x=long, y=lat, group=group),
                fill="white", colour="grey90") +
-  geom_hex(data=sa2_hex3, aes(x = hex_long, y = hex_lat,
-                             fill = pop, label=name),
-           stat = "identity", colour=NA, alpha = 0.75) +
+  geom_hex(data=sa2_hex005, aes(x = long_c, y = lat,
+                             fill = population, label=name),
+           stat = "identity", alpha = 0.75) +
   theme_map()
