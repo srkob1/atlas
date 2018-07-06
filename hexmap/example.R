@@ -13,6 +13,9 @@ library(sp)
 load("data/sa2_2011.Rda")
 load("data/sa2_tidy11.Rda")
 
+# Find the functions to use
+source("hexagon.R")
+
 # Remove islands because we think they are not used in the atlas
 # If they are, we simply need to shift them closer to the mainland
 # to automatically lay out
@@ -47,28 +50,26 @@ centroids <- sa2@data %>%
                                                      ~ "Not in any Significant Urban Area",
                          SUA_NAME_2011 == "Not in any Significant Urban Area (OT)"
                                                      ~ "Not in any Significant Urban Area",
-                                                     TRUE ~ as.character(SUA_NAME_2011)))
-# bbox <- data.frame(min = c(113.7107,-43.32902),
-#            max = c(153.6002, -10.18244))
+                                                     TRUE ~ as.character(SUA_NAME_2011)),
+         citydistance = as.numeric(map2(long, lat, closecity)))
 
-# Find the functions to use
-source("hexagon.R")
 
 # Set radius for hexagons to layout a reasonable grid for the country
 # This is chosen arbitrarily, depending on the desired amount of geographical space each hex is allocated
 radius <- 0.3
 
 # Create hexagon grid
-grid1 <- create_grid(sa2@bbox, radius)
-grid1 <- grid1 %>% mutate(id=1:nrow(grid1), assigned=FALSE)
+grid3 <- create_grid(sa2@bbox, radius)
+grid3 <- grid3 %>% mutate(id=1:nrow(grid3), assigned=FALSE)
+
 
 # Mapping sa2 to closest hexagon grid, in order of population,
 # and then distance
 system.time(
 sa2_hex3 <- centroids %>%
-  arrange(desc(pop)) %>%
+  arrange(citydistance) %>%
   #write in a return of all possible allocations
-  assign_hexagons(., grid1, 0.3))
+  assign_hexagons(., grid3, 0.3))
 write_csv(sa2_hex3, path="data/hex/sa2_hex3.csv")
 
 load("data/sa2_hex005.Rda")
@@ -94,8 +95,8 @@ load("data/sa2_hex.Rda")
 v1 <- ggplot(sa2_tidy) +
   geom_polygon(aes(x=long, y=lat, group=group),
                fill="white", colour="grey90") +
-  geom_hex(data=sa2_hex07v2, aes(x = hex_long, y = hex_lat,
-                             fill = pop, label=name),
+  geom_hex(data=sa2_hex1, aes(x = hex_long, y = hex_lat,
+                             fill = citydistance, label=name),
          stat = "identity", colour = NA, alpha = 0.75) +
   scale_fill_gradient(low = "#d8c0a8", high = "#a86030") +
   theme_map()

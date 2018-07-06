@@ -73,6 +73,26 @@ grid_filter <- function(fgrid, gridbox, folong, folat, city=T){
   return(fgrid)
 }
 
+
+closecity <- function(folong, folat){
+  # all capital cities
+  cities <- data.frame(city = c("Melbourne","Canberra","Sydney","Darwin","Brisbane","Adelaide","Hobart","Perth"),
+                       long = c(144.9750162,149.1290262,151.1851798,130.8500386,153.0350927,138.6000048,147.2950297,115.8399987),
+                       lat = c(-37.82003131,-35.28302855,-33.92001097,-12.42535398,-27.45503091,-34.93498777,-42.85000853,-31.95501463))
+  
+  # distance between current point and cities
+  citydistance <- distVincentyEllipsoid(
+    c(folong, folat), cbind(cities$long,cities$lat),
+    a=6378160, b=6356774.719, f=1/298.257222101)
+  
+  # closest city
+  citydistance_df <- cbind(cities, citydistance) %>%
+    arrange(citydistance) %>% top_n(-1)
+  return(citydistance_df$citydistance)
+  
+}
+
+
 # Function to take lat/long centroids from spatial polygons
 # and assign to closest hexgrid location.
 # DI SAYS: change separate long, lat input to one tibble for
@@ -105,7 +125,7 @@ assign_hexagons <- function(centroids, grid, radius) {
                                            folat=olat)
         while (NROW(grid_nasgn)==0){
           message("Expanded")
-          browser()
+          #browser()
           count <-count+1
           expradius2 <- exp(radius)/(1.5)^count
           grid_nasgn <- grid_filter(fgrid = grid, 
